@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
+
 type ContainerProps = {
   width: string;
   backgroundColor?: string;
   padding?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 };
 
 export const Container = ({
@@ -14,9 +16,9 @@ export const Container = ({
   return (
     <section
       style={{
-        width: width,
-        backgroundColor: backgroundColor,
-        padding: padding,
+        width,
+        backgroundColor,
+        padding,
         margin: "0 auto",
       }}
     >

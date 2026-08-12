@@ -1,0 +1,22 @@
+.navbar {
+  font-family: "Oswald", sans-serif;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:hover {
+    color: #2bbbde;
+  }
+}

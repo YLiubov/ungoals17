@@ -1,7 +1,9 @@
-import { Header } from "./components/Header";
-import { Main } from "./components/Main";
-import { Footer } from "./components/Footer";
-import { Container } from "./components/Container";
+import "./App.scss";
+
+import { Header } from "./components/layout/Header/Header";
+import { Main } from "./components/layout/Main/Main";
+import { Footer } from "./components/layout/Footer/Footer";
+import { Container } from "./components/layout/Container/Container";
 
 const App = () => {
   return (

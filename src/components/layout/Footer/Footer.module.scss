@@ -1,0 +1,28 @@
+.footer {
+  background-color: #076f9f;
+  background-image: url("../../../assets/images/Footer_Background.svg");
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  padding: 60px 0;
+}
+
+.content {
+  width: 80%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 60px;
+}
+
+.about,
+.organisations {
+  flex: 1;
+}
+
+.logos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
