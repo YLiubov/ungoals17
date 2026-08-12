@@ -1,9 +1,14 @@
+import unGoalsLogo from "../assets/images/Logo.svg";
 import { Navbar } from "./Navbar";
 
 export const Header = () => {
   return (
     <header>
-      <h1>UN Goals 17</h1>
+      <img
+        src={unGoalsLogo}
+        alt="FN's Verdensmål"
+      />
+
       <Navbar />
     </header>
   );
