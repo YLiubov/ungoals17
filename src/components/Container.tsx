@@ -1,17 +1,25 @@
-import type { ReactNode } from "react";
-
 type ContainerProps = {
   width: string;
-  backgroundColor: string;
+  backgroundColor?: string;
   padding?: string;
-  margin?: string;
-  children: ReactNode;
+  children?: React.ReactNode;
 };
 
-export const Container = ({ width, backgroundColor, padding, margin, children,
+export const Container = ({
+  width,
+  backgroundColor,
+  padding,
+  children,
 }: ContainerProps) => {
   return (
-    <section style={{ width: width, backgroundColor: backgroundColor, padding: padding, margin: margin, }}>
+    <section
+      style={{
+        width: width,
+        backgroundColor: backgroundColor,
+        padding: padding,
+        margin: "0 auto",
+      }}
+    >
       {children}
     </section>
   );
