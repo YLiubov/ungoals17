@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import {
   NavbarStyled,
   NavListStyled,
@@ -8,12 +10,27 @@ export const Navbar = () => {
   return (
     <NavbarStyled $color="#222222">
       <NavListStyled>
-        <NavItemStyled>Verdensmålene</NavItemStyled>
-        <NavItemStyled>Undervisning</NavItemStyled>
-        <NavItemStyled>Byg dit eget mål</NavItemStyled>
-        <NavItemStyled>FAQ</NavItemStyled>
-        <NavItemStyled>Kontakt os</NavItemStyled>
-        <NavItemStyled>Login</NavItemStyled>
+        <NavItemStyled>
+          <Link to="/verdensmaalene">Verdensmålene</Link>
+        </NavItemStyled>
+
+        <NavItemStyled>
+          <Link to="/undervisning">Undervisning</Link>
+        </NavItemStyled>
+
+        <NavItemStyled>
+          <Link to="/byg-dit-eget-maal">
+            Byg dit eget mål
+          </Link>
+        </NavItemStyled>
+
+        <NavItemStyled>
+          <Link to="/faq">FAQ</Link>
+        </NavItemStyled>
+
+        <NavItemStyled>
+          <Link to="/kontakt">Kontakt os</Link>
+        </NavItemStyled>
       </NavListStyled>
     </NavbarStyled>
   );

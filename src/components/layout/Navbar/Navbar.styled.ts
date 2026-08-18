@@ -29,9 +29,13 @@ export const NavItemStyled = styled.li`
   font-weight: 600;
   text-transform: uppercase;
 
-  cursor: pointer;
+  a {
+    display: inline-block;
+    transition: color 0.2s ease;
+  }
 
-  &:hover {
+  a:hover,
+  a:focus-visible {
     color: #2bbbde;
   }
 `;

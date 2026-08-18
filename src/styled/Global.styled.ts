@@ -22,6 +22,7 @@ export const GlobalStyle = createGlobalStyle`
     font-size: ${({ theme }) => theme.fontSizes.h1};
     line-height: 1;
     color: ${({ theme }) => theme.colors.text};
+    text-transform: uppercase;
   }
 
   h2 {
