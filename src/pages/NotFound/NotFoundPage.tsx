@@ -1,15 +1,16 @@
-import { Link } from "react-router-dom";
-import { Container } from "../../components/layout/Container/Container";
+import { NavLink } from "react-router-dom";
+import { ContentWrapper } from "../../components/layout/ContentWrapper/ContentWrapper";
 
 export const NotFoundPage = () => {
   return (
-    <Container width="80%" padding="40px 0">
-      <h1>404</h1>
-      <p>Siden, du leder efter, findes ikke.</p>
-
-      <Link to="/">
+    <ContentWrapper
+      title="404"
+      description="Siden kunne ikke findes."
+      showTitle={true}
+    >
+      <NavLink to="/" end>
         Gå tilbage til forsiden
-      </Link>
-    </Container>
+      </NavLink>
+    </ContentWrapper>
   );
 };

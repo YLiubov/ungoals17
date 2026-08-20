@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { NavLink } from "react-router-dom";
 
 // служебный prop для styling
 type NavbarStyledProps = {
@@ -14,28 +15,30 @@ export const NavbarStyled = styled.nav<NavbarStyledProps>`
 `;
 
 export const NavListStyled = styled.ul`
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    
-    margin: 0;
-    padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
 
-    list-style: none;
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
 `;
 
 export const NavItemStyled = styled.li`
   font-family: "Oswald", sans-serif;
   font-weight: 600;
   text-transform: uppercase;
+`;
 
-  a {
-    display: inline-block;
-    transition: color 0.2s ease;
-  }
+export const NavLinkStyled = styled(NavLink)`
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
 
-  a:hover,
-  a:focus-visible {
-    color: #2bbbde;
+  &:hover,
+  &:focus-visible,
+  &.active {
+    color: ${({ theme }) => theme.colors.primary};
   }
 `;
