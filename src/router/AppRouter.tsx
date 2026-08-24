@@ -8,6 +8,7 @@ import { FaqPage } from "../pages/Faq/FaqPage";
 import { HomePage } from "../pages/Home/HomePage";
 import { LoginPage } from "../pages/Login/LoginPage";
 import { NotFoundPage } from "../pages/NotFound/NotFoundPage";
+import { GoalPage } from "../pages/Goal/GoalPage";
 
 export const AppRouter = () => (
   <BrowserRouter>
@@ -20,6 +21,7 @@ export const AppRouter = () => (
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/kontakt" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/maal/:id" element={<GoalPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </main>
