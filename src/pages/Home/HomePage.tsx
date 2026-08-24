@@ -1,4 +1,4 @@
-import { ContentWrapper } from "../../components/layout/ContentWrapper/ContentWrapper";
+import { ContentWrapper } from "../../layouts/ContentWrapper/ContentWrapper";
 import goal1 from "../../assets/images/1_Afskaf_fattigdom.svg";
 import goal2 from "../../assets/images/2_Stop_sult.svg";
 import goal3 from "../../assets/images/3_Sundhed_og_trivsel.svg";
@@ -54,7 +54,6 @@ export const HomePage = () => {
       <ContentWrapper
         title="Verdensmålene"
         description="Hvad er FN’s Verdensmål for bæredygtig udvikling?"
-        showTitle={true}
       >
         <h3>
             FN&apos;s Verdensmål består af 17 mål og 169

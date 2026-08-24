@@ -1,4 +1,4 @@
-import { ContentWrapper } from "../../components/layout/ContentWrapper/ContentWrapper";
+import { ContentWrapper } from "../../layouts/ContentWrapper/ContentWrapper";
 
 import {
   FaqListStyled,
@@ -9,7 +9,7 @@ import {
 
 export const FaqPage = () => {
   return (
-    <ContentWrapper title="FAQ" description="" showTitle={true}>
+    <ContentWrapper title="FAQ">
       <FaqListStyled>
         <FaqItemStyled>
           <FaqQuestionStyled>Hvad er verdensmålene?</FaqQuestionStyled>

@@ -1,4 +1,4 @@
-import { ContentWrapper } from "../../components/layout/ContentWrapper/ContentWrapper";
+import { ContentWrapper } from "../../layouts/ContentWrapper/ContentWrapper";
 import {
   SubjectCardStyled,
   SubjectGridStyled,
@@ -21,7 +21,6 @@ export const EducationPage = () => {
     <ContentWrapper
       title="Undervisning"
       description="Her finder du inspiration til din undervisning i form af introducerende øvelser, der kan bruges til at sætte verdensmålene i spil sammen med dine elever. Øvelserne er udarbejdet på baggrund af bogen “Bliver verden bedre” og kernestof i fagene."
-      showTitle={true}
     >
       <SubjectGridStyled>
         {subjects.map((subject) => (
