@@ -1,61 +1,46 @@
 import styled from "styled-components";
 
-export const GoalListSectionStyled = styled.section`
+export const GoalListStyled = styled.section`
   padding: 36px 0 60px;
+  background-color: ${({ theme }) => theme.colors.secondary};
 
-  background-color: ${({ theme }) =>
-    theme.colors.secondary};
-`;
+  .goalListContent { width: 88%; margin: 0 auto; }
 
-export const GoalListContentStyled = styled.div`
-  width: 88%;
-  margin: 0 auto;
-`;
+  h2 {
+    margin: 0;
+    font-family: ${({ theme }) => theme.fonts.heading};
+    font-size: 28px;
+    text-align: center;
+    text-transform: uppercase;
+  }
 
-export const GoalListTitleStyled = styled.h2`
-  margin: 0;
+  .goalListDivider {
+    display: block;
+    width: 160px;
+    margin: 12px auto 24px;
+  }
 
-  font-family: ${({ theme }) =>
-    theme.fonts.heading};
-  font-size: 28px;
-  text-align: center;
-  text-transform: uppercase;
-`;
+  .goalListGrid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
 
-export const GoalListDividerStyled = styled.img`
-  display: block;
+  .goalListLogoCard {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-  width: 160px;
-  margin: 12px auto 24px;
-`;
-
-export const GoalsGridStyled = styled.div`
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  .goalListLogo { width: 75%; height: auto; }
+  .goalListEmpty { text-align: center; }
 
   @media (max-width: 1000px) {
-    grid-template-columns: repeat(3, 1fr);
+    .goalListGrid { grid-template-columns: repeat(3, 1fr); }
   }
 
   @media (max-width: 600px) {
-    grid-template-columns: repeat(2, 1fr);
+    .goalListGrid { grid-template-columns: repeat(2, 1fr); }
   }
-`;
-
-export const GoalLogoCardStyled = styled.div`
-  aspect-ratio: 1;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const GoalLogoStyled = styled.img`
-  width: 75%;
-  height: auto;
-`;
-
-export const EmptyMessageStyled = styled.p`
-  text-align: center;
 `;

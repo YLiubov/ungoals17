@@ -1,15 +1,13 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
+import { LikeButton } from "../../components/atoms/LikeButton/LikeButton";
 import { GoalList } from "../../components/organisms/GoalList/GoalList";
 import { goals } from "../../data/Goals.ts";
 import { ContentWrapper } from "../../layouts/ContentWrapper/ContentWrapper";
 import { NotFoundPage } from "../NotFound/NotFoundPage";
 
-import {
-  GoalDescriptionStyled,
-  GoalVideoStyled,
-} from "./GoalPage.styled.ts";
+import { GoalPageStyled } from "./GoalPage.styled";
 
 export const GoalPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,9 +19,7 @@ export const GoalPage = () => {
     });
   }, [id]);
 
-  const goal = goals.find(
-    (currentGoal) => currentGoal.id === id,
-  );
+  const goal = goals.find((currentGoal) => currentGoal.id === id);
 
   if (!goal) {
     return <NotFoundPage />;
@@ -39,18 +35,23 @@ export const GoalPage = () => {
         title={`Mål ${goal.id}: ${goal.title}`}
         description={goal.byline}
       >
-        <GoalVideoStyled
-          src={goal.video_url}
-          title={`Video om mål ${goal.id}: ${goal.title}`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+        <GoalPageStyled>
+          <div className="goalPageMedia">
+            <iframe
+              src={goal.video_url}
+              title={`Video om mål ${goal.id}: ${goal.title}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+            <LikeButton />
+          </div>
 
-        <GoalDescriptionStyled>
-          {descriptionParagraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </GoalDescriptionStyled>
+          <div className="goalPageDescription">
+            {descriptionParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </GoalPageStyled>
       </ContentWrapper>
 
       <GoalList />

@@ -1,9 +1,5 @@
-import {
-  NavbarStyled,
-  NavItemStyled,
-  NavLinkStyled,
-  NavListStyled,
-} from "./Navbar.styled";
+import { NavLink } from "react-router-dom";
+import { NavbarStyled } from "./Navbar.styled";
 
 const navigationItems = [
   { to: "/", label: "Verdensmålene", end: true },
@@ -16,14 +12,14 @@ const navigationItems = [
 
 export const Navbar = () => (
   <NavbarStyled aria-label="Hovednavigation">
-    <NavListStyled>
+    <ul>
       {navigationItems.map(({ to, label, end }) => (
-        <NavItemStyled key={to}>
-          <NavLinkStyled to={to} end={end}>
+        <li key={to}>
+          <NavLink to={to} end={end}>
             {label}
-          </NavLinkStyled>
-        </NavItemStyled>
+          </NavLink>
+        </li>
       ))}
-    </NavListStyled>
+    </ul>
   </NavbarStyled>
 );

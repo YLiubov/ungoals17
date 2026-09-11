@@ -4,23 +4,27 @@ type SubjectCardStyledProps = {
   $backgroundColor: string;
 };
 
-export const SubjectGridStyled = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px 30px;
-  margin-top: 30px;
+export const EducationPageStyled = styled.div`
+  .educationPageGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px 30px;
+    margin-top: 30px;
+  }
 
   @media (max-width: 800px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    .educationPageGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   @media (max-width: 500px) {
-    grid-template-columns: 1fr;
+    .educationPageGrid { grid-template-columns: 1fr; }
   }
 `;
 
 export const SubjectCardStyled =
-  styled.div<SubjectCardStyledProps>`
+  styled.article<SubjectCardStyledProps>`
     display: flex;
     align-items: center;
     justify-content: center;

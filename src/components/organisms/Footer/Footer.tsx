@@ -2,24 +2,14 @@ import danidaLogo from "../../../assets/images/Danida_Logo.svg";
 import globaleGymnasierLogo from "../../../assets/images/Globale_Gymnasier_Logo.svg";
 import verdensklasseLogo from "../../../assets/images/MS_Logo.svg";
 import undpLogo from "../../../assets/images/UNDP_Logo.svg";
-import {
-  CountdownStyled,
-  DanidaLogoStyled,
-  FooterColumnStyled,
-  FooterContentStyled,
-  FooterStyled,
-  GymnasierLogoStyled,
-  NewsletterFormStyled,
-  PrimaryLogosStyled,
-  SecondaryLogosStyled,
-  UndpLogoStyled,
-  VerdensklasseLogoStyled,
-} from "./Footer.styled";
+import { Button } from "../../atoms/Button/Button";
+import { Input } from "../../atoms/Input/Input";
+import { FooterStyled } from "./Footer.styled";
 
 export const Footer = () => (
   <FooterStyled>
-    <FooterContentStyled>
-      <FooterColumnStyled>
+    <div className="footerContent">
+      <section className="footerColumn">
         <h3>Om hjemmesiden</h3>
         <p>
           Dette digitale læringssite er udviklet af UNDP&apos;s nordiske kontor
@@ -41,47 +31,50 @@ export const Footer = () => (
           indbakke.
         </p>
 
-        <NewsletterFormStyled>
-          <input
+        <form className="footerNewsletter">
+          <Input
             type="email"
             name="newsletterEmail"
             aria-label="E-mail til nyhedsbrev"
             placeholder="Indtast din email"
           />
-          <button type="submit">Tilmeld</button>
-        </NewsletterFormStyled>
+          <Button type="submit">Tilmeld</Button>
+        </form>
 
-        <CountdownStyled>
+        <p className="footerCountdown">
           ANTAL SEKUNDER TIL 2030: 1891716240887 sekunder
-        </CountdownStyled>
-      </FooterColumnStyled>
+        </p>
+      </section>
 
-      <FooterColumnStyled>
+      <section className="footerColumn">
         <h3>Organisationerne bag</h3>
-        <PrimaryLogosStyled>
-          <UndpLogoStyled 
-            src={undpLogo} 
-            alt="UNDP" />
-          <VerdensklasseLogoStyled
+        <div className="footerPrimaryLogos">
+          <img
+            className="footerLogoUndp"
+            src={undpLogo}
+            alt="UNDP"
+          />
+          <img
+            className="footerLogoVerdensklasse"
             src={verdensklasseLogo}
             alt="VerdensKlasse og Mellemfolkeligt Samvirke"
           />
-        </PrimaryLogosStyled>
+        </div>
 
-        <SecondaryLogosStyled>
-          <GymnasierLogoStyled
+        <div className="footerSecondaryLogos">
+          <img
+            className="footerLogoGymnasier"
             src={globaleGymnasierLogo}
             alt="Globale Gymnasier"
           />
-          <h3>
-            Udviklet med støtte fra Danidas Oplysningsbevilling
-          </h3>
-          <DanidaLogoStyled 
-            src={danidaLogo} 
-            alt="Danida" 
+          <h3>Udviklet med støtte fra Danidas Oplysningsbevilling</h3>
+          <img
+            className="footerLogoDanida"
+            src={danidaLogo}
+            alt="Danida"
           />
-        </SecondaryLogosStyled>
-      </FooterColumnStyled>
-    </FooterContentStyled>
+        </div>
+      </section>
+    </div>
   </FooterStyled>
 );

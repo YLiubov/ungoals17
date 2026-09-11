@@ -3,8 +3,10 @@ import styled from "styled-components";
 export const InputStyled = styled.input`
   box-sizing: border-box;
   width: 100%;
-  padding: 10px 12px;
+  height: 31px;
+  padding: 0 15px;
   border: 1px solid #b8b8b8;
+  border-radius: 3px;
   font: inherit;
 
   &:focus-visible {

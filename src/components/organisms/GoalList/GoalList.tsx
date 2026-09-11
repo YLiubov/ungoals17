@@ -5,37 +5,29 @@ import goalsLogo from "../../../assets/images/Verdensmål.svg";
 
 import { GoalCard } from "../../molecules/GoalCard/GoalCard";
 
-import {
-  EmptyMessageStyled,
-  GoalListContentStyled,
-  GoalListDividerStyled,
-  GoalListSectionStyled,
-  GoalListTitleStyled,
-  GoalLogoCardStyled,
-  GoalLogoStyled,
-  GoalsGridStyled,
-} from "./GoalList.styled";
+import { GoalListStyled } from "./GoalList.styled";
 
 export const GoalList = () => {
   return (
-    <GoalListSectionStyled>
-      <GoalListContentStyled>
-        <GoalListTitleStyled>
+    <GoalListStyled>
+      <div className="goalListContent">
+        <h2>
           FN&apos;s 17 verdensmål for bæredygtig udvikling
-        </GoalListTitleStyled>
+        </h2>
 
-        <GoalListDividerStyled
+        <img
+          className="goalListDivider"
           src={divider}
           alt=""
           aria-hidden="true"
         />
 
         {goals.length === 0 ? (
-          <EmptyMessageStyled>
+          <p className="goalListEmpty">
             Der er ingen verdensmål at vise
-          </EmptyMessageStyled>
+          </p>
         ) : (
-          <GoalsGridStyled>
+          <div className="goalListGrid">
             {goals.map((goal) => (
               <GoalCard
                 key={goal.id}
@@ -46,15 +38,16 @@ export const GoalList = () => {
               />
             ))}
 
-            <GoalLogoCardStyled>
-              <GoalLogoStyled
+            <div className="goalListLogoCard">
+              <img
+                className="goalListLogo"
                 src={goalsLogo}
                 alt="FN's Verdensmål"
               />
-            </GoalLogoCardStyled>
-          </GoalsGridStyled>
+            </div>
+          </div>
         )}
-      </GoalListContentStyled>
-    </GoalListSectionStyled>
+      </div>
+    </GoalListStyled>
   );
 };

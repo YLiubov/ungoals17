@@ -24,53 +24,47 @@ export const GoalCardStyled =
     &:hover {
       transform: scale(1.03);
     }
+
+    .goalCardHeading {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .goalCardNumber {
+      font-family: ${({ theme }) => theme.fonts.heading};
+      font-size: ${({ theme }) => theme.fontSizes.h1};
+    }
+
+    h3 {
+      margin: 0;
+      color: inherit;
+      font-family: ${({ theme }) => theme.fonts.heading};
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .goalCardIcon {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+
+      svg {
+        width: 65%;
+        max-height: 70%;
+      }
+
+      svg path,
+      svg polygon {
+        fill: currentColor;
+      }
+
+      svg line {
+        stroke: currentColor;
+      }
+    }
   `;
-
-export const GoalHeadingStyled = styled.div`
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-`;
-
-export const GoalNumberStyled = styled.span`
-  font-family: ${({ theme }) =>
-    theme.fonts.heading};
-  font-size: ${({ theme }) => theme.fontSizes.h1};
-`;
-
-export const GoalTitleStyled = styled.h3`
-  margin: 0;
-
-  font-family: ${({ theme }) =>
-    theme.fonts.heading};
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.1;
-  text-transform: uppercase;
-
-  color: inherit;
-`;
-
-export const GoalIconStyled = styled.div`
-  flex: 1;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 0;
-
-  svg {
-    width: 65%;
-    max-height: 70%;
-  }
-
-  svg path,
-  svg polygon {
-    fill: currentColor;
-  }
-
-  svg line {
-    stroke: currentColor;
-  }
-`;

@@ -1,7 +1,7 @@
 import { ContentWrapper } from "../../layouts/ContentWrapper/ContentWrapper";
 import {
+  EducationPageStyled,
   SubjectCardStyled,
-  SubjectGridStyled,
 } from "./EducationPage.styled";
 
 const subjects = [
@@ -22,16 +22,18 @@ export const EducationPage = () => {
       title="Undervisning"
       description="Her finder du inspiration til din undervisning i form af introducerende øvelser, der kan bruges til at sætte verdensmålene i spil sammen med dine elever. Øvelserne er udarbejdet på baggrund af bogen “Bliver verden bedre” og kernestof i fagene."
     >
-      <SubjectGridStyled>
-        {subjects.map((subject) => (
-          <SubjectCardStyled
-            key={subject.name}
-            $backgroundColor={subject.color}
-          >
-            {subject.name}
-          </SubjectCardStyled>
-        ))}
-      </SubjectGridStyled>
+      <EducationPageStyled>
+        <div className="educationPageGrid">
+          {subjects.map((subject) => (
+            <SubjectCardStyled
+              key={subject.name}
+              $backgroundColor={subject.color}
+            >
+              {subject.name}
+            </SubjectCardStyled>
+          ))}
+        </div>
+      </EducationPageStyled>
     </ContentWrapper>
   );
 };

@@ -1,10 +1,4 @@
-import {
-  GoalCardStyled,
-  GoalHeadingStyled,
-  GoalIconStyled,
-  GoalNumberStyled,
-  GoalTitleStyled,
-} from "./GoalCard.styled";
+import { GoalCardStyled } from "./GoalCard.styled";
 
 import type {
   GoalCardProps,
@@ -22,17 +16,13 @@ export const GoalCard = ({
     //   для разных карточек можно использовать разные цвета, поэтому передаем цвет как пропс
       $color={color}
     >
-      <GoalHeadingStyled>
-        <GoalNumberStyled>
-          {id}
-        </GoalNumberStyled>
+      <div className="goalCardHeading">
+        <span className="goalCardNumber">{id}</span>
+        <h3>{title}</h3>
+      </div>
 
-        <GoalTitleStyled>
-          {title}
-        </GoalTitleStyled>
-      </GoalHeadingStyled>
-
-      <GoalIconStyled
+      <div
+        className="goalCardIcon"
         dangerouslySetInnerHTML={{
           __html: icon,
         }}

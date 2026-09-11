@@ -1,9 +1,5 @@
 import { Container } from "../Container/Container";
-import {
-  PageContentStyled,
-  PageTitleStyled,
-  TitleBandStyled,
-} from "./ContentWrapper.styled";
+import { ContentWrapperStyled } from "./ContentWrapper.styled";
 import type { ContentWrapperProps } from "./ContentWrapper.types";
 
 export const ContentWrapper = ({
@@ -11,18 +7,18 @@ export const ContentWrapper = ({
   description,
   children,
 }: ContentWrapperProps) => (
-  <section>
-    <TitleBandStyled>
+  <ContentWrapperStyled>
+    <div className="contentWrapperTitleBand">
       <Container>
-        <PageTitleStyled>{title}</PageTitleStyled>
+        <h1>{title}</h1>
       </Container>
-    </TitleBandStyled>
+    </div>
 
     <Container>
-      <PageContentStyled>
+      <div className="contentWrapperContent">
         {description && <h2>{description}</h2>}
         {children}
-      </PageContentStyled>
+      </div>
     </Container>
-  </section>
+  </ContentWrapperStyled>
 );

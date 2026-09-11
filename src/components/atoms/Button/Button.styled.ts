@@ -2,8 +2,11 @@ import styled from "styled-components";
 
 export const ButtonStyled = styled.button`
   align-self: flex-start;
-  padding: 10px 22px;
+  box-sizing: border-box;
+  height: 31px;
+  padding: 0 22px;
   border: 0;
+  border-radius: 3px;
   color: #ffffff;
   background-color: ${({ theme }) => theme.colors.primary};
   font-family: ${({ theme }) => theme.fonts.heading};

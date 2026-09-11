@@ -1,16 +1,11 @@
 import { Button } from "../../atoms/Button/Button";
 import { Label } from "../../atoms/Label/Label";
 import { FormField } from "../../molecules/FormField/FormField";
-import {
-  ContactFormStyled,
-  FieldsStyled,
-  MessageGroupStyled,
-  MessageStyled,
-} from "./ContactForm.styled";
+import { ContactFormStyled } from "./ContactForm.styled";
 
 export const ContactForm = () => (
   <ContactFormStyled>
-    <FieldsStyled>
+    <fieldset>
       <legend>Send os en besked</legend>
       <FormField id="contactName" name="name" label="Navn:" required />
       <FormField
@@ -20,11 +15,11 @@ export const ContactForm = () => (
         label="E-mail:"
         required
       />
-      <MessageGroupStyled>
+      <div className="contactFormMessage">
         <Label htmlFor="contactMessage">Besked:</Label>
-        <MessageStyled id="contactMessage" name="message" required />
-      </MessageGroupStyled>
-    </FieldsStyled>
+        <textarea id="contactMessage" name="message" required />
+      </div>
+    </fieldset>
     <Button type="submit">Send besked</Button>
   </ContactFormStyled>
 );
