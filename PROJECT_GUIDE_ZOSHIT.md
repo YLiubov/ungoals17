@@ -1223,7 +1223,7 @@ TypeScript фиксирует ожидаемый тип: `useState<string>("")`,
 
 Promise представляет будущий результат асинхронной операции. Состояния: `pending` — ожидание, `fulfilled` — успех, `rejected` — ошибка. `async/await` делает такой код последовательным для чтения, а `try/catch` перехватывает ошибку.
 
-**Статус: Forklaret, men ikke implementeret endnu.** Искусственный Promise в форму не добавлен.
+**Статус: Brugt i projektet.** Promise теперь реально используется через `fetch()` и `response.json()` в `EducationList.tsx`.
 
 Вопрос: что хранит Promise? Ответ: будущий успешный результат или ошибку. Dansk: *Et Promise repræsenterer et fremtidigt resultat eller en fejl.*
 
@@ -1241,7 +1241,7 @@ if (!response.ok) {
 const data = await response.json();
 ```
 
-Обычно код помещают в `try/catch`. **Статус: Forklaret, men ikke implementeret endnu**, потому что у проекта нет подключённого API.
+Обычно код помещают в `try/catch`. **Статус: Brugt i projektet** — локальный API подключён в `EducationList.tsx`.
 
 Вопрос: что возвращает `fetch()`? Ответ: Promise с HTTP response. Dansk: *Fetch returnerer et Promise med et HTTP-svar.*
 
@@ -1283,7 +1283,7 @@ const previewColor = isValidHexColor(backgroundColor)
 
 ## 2. Service
 
-Все темы Service здесь пока имеют статус **Forklaret, men ikke implementeret endnu**: настоящее API к проекту не подключено.
+Часть тем Service теперь реально используется: `GET`, request, response, endpoint и JSON применяются в `EducationList`. Query и Bearer Token в публичном education endpoint не используются.
 
 ### HTTP Methods — HTTP-metoder — HTTP-методы
 
@@ -1487,8 +1487,8 @@ Loops, Promises, Fetch и Service не используются непосред
 | `NavLink` | `src/components/organisms/Navbar/Navbar.tsx` | ссылки навигации | Brugt i projektet |
 | `props.children` | `ContentWrapper.tsx` и `.types.ts` | `children: ReactNode` | Brugt i projektet |
 | RegExp | `CustomGoalDesigner.tsx` | `HEX_COLOR_PATTERN` | Brugt i projektet |
-| Fetch / Promise | реального файла нет | только учебный пример | Forklaret, men ikke implementeret |
-| HTTP / API | реального файла нет | backend не подключён | Forklaret, men ikke implementeret |
+| Fetch / Promise | `src/components/organisms/EducationList/EducationList.tsx` | получение education data | Brugt i projektet |
+| HTTP / API | `EducationList.tsx` и соседний `ungoals17-api-ts-sqlite` | GET `/api/education` | Brugt i projektet |
 | Outlet | реального файла нет | nested routes отсутствуют | Skal læres senere |
 | Custom Hook | реального файла нет | переиспользования validation пока нет | Skal læres senere |
 
@@ -1561,3 +1561,389 @@ Promises, Fetch, HTTP, Bearer Token, Outlet и Custom Hook не относятс
 - [x] Hooks
 - [x] Outlet
 - [x] Custom Hook
+
+---
+
+# Fetch данных из API в React
+
+## 1. Что построено
+
+```text
+EducationPage (page)
+└── EducationList (organism)
+    ├── fetch + useEffect
+    ├── subjects / isLoading / error state
+    ├── loading, error и empty state
+    └── subjects.map()
+        └── EducationCard (molecule)
+```
+
+Реальные файлы:
+
+```text
+src/pages/Education/EducationPage.tsx
+src/components/organisms/EducationList/
+├── EducationList.tsx
+├── EducationList.styled.ts
+└── EducationList.types.ts
+src/components/molecules/EducationCard/
+├── EducationCard.tsx
+├── EducationCard.styled.ts
+└── EducationCard.types.ts
+```
+
+`EducationPage` отвечает за композицию страницы и сохраняет вводный текст. `EducationList` отвечает за получение и состояния списка. `EducationCard` получает только `name` и `color` и показывает один предмет.
+
+## 2. Frontend, backend и адреса
+
+```text
+Frontend: http://localhost:5173
+Backend:  http://localhost:4000
+Endpoint: GET http://localhost:4000/api/education
+```
+
+Frontend и backend — два разных приложения. `localhost` означает этот компьютер, а разные ports (`5173` и `4000`) означают разные сетевые адреса/origins.
+
+Backend хранится отдельно:
+
+```text
+React-Projects/
+├── ungoals17/            ← frontend
+└── ungoals17-api-ts-sqlite/ ← backend API
+```
+
+API публичный, поэтому этому endpoint не нужен Bearer Token.
+
+## 3. Обязательные термины
+
+| English | Dansk | Русский | Простое определение и пример проекта |
+| --- | --- | --- | --- |
+| API | API | программный интерфейс | Правила, по которым frontend получает данные backend; `/api/education`. |
+| Frontend | frontend | клиентская часть | React-приложение на `localhost:5173`. |
+| Backend | backend | серверная часть | Express/SQLite API на `localhost:4000`. |
+| Client | klient | клиент | Программа, отправляющая request; здесь браузер с React. |
+| Server | server | сервер | Программа, принимающая request и создающая response. |
+| HTTP | HTTP | протокол HTTP | Правила обмена request/response между клиентом и сервером. |
+| HTTP Method | HTTP-metode | HTTP-метод | Вид операции; здесь используется `GET`. |
+| GET | GET | получить | Метод чтения education subjects без изменения сервера. |
+| Request | forespørgsel | запрос | `fetch(EDUCATION_ENDPOINT)` отправляет request API. |
+| Response | svar | ответ | Объект `Response`, возвращённый сервером. |
+| Endpoint | endpoint | адрес операции API | `http://localhost:4000/api/education`. |
+| Status Code | statuskode | код состояния | Например, `200` — успех, `404` — не найдено, `500` — ошибка сервера. |
+| Headers | headers | заголовки | Метаданные request/response; этому GET специальные headers не нужны. |
+| Body | body | тело | Основные данные; response body содержит JSON-массив. |
+| JSON | JSON | текстовый формат данных | API передаёт массив объектов `{ id, name, color }`. |
+| CORS | CORS | разрешение междоменных запросов | Определяет, разрешено ли frontend одного origin обращаться к backend другого origin. API использует пакет `cors`. |
+| localhost | localhost | локальный компьютер | Оба приложения работают только на этой машине. |
+| Port | port | порт | Часть адреса приложения: `5173` для frontend, `4000` для API. |
+| Fetch | fetch | получение по HTTP | Встроенная browser-функция, отправляющая request и возвращающая Promise. |
+| Promise | Promise | обещание результата | Объект будущего результата async-операции. |
+| Async | asynkron | асинхронный | `async` позволяет использовать `await` и заставляет функцию возвращать Promise. |
+| Await | afvent | ожидание Promise | Приостанавливает только текущую async-функцию, а не весь браузер. |
+| Try | prøv | попытка | Блок кода, где выполняется запрос. |
+| Catch | fang | перехват ошибки | Показывает безопасное сообщение при проблеме API/network. |
+| Finally | til sidst | в любом случае | Выключает loading и при успехе, и при ошибке. |
+| Error handling | fejlhåndtering | обработка ошибок | `response.ok`, `throw`, `catch` и error-state. |
+| Loading state | indlæsningsstatus | состояние загрузки | `isLoading` решает, показывать ли `Henter undervisningsfag...`. |
+| Error state | fejltilstand | состояние ошибки | `error` хранит пользовательское сообщение. |
+| Data state | datatilstand | состояние данных | `subjects` хранит массив предметов. |
+| useState | state-hook | хук состояния | Создаёт state и setter для данных, loading и error. |
+| useEffect | effect-hook | хук эффекта | После mount запускает функцию получения API-данных. |
+| Dependency array | dependency array | массив зависимостей | `[]` означает: повторять effect только при новом mount. |
+| Initial render | første render | первый рендер | `subjects=[]`, `isLoading=true`, поэтому виден loading. |
+| Re-render | nyt render | повторный рендер | Запускается после setters и показывает новые состояния. |
+| Type | type | тип | `EducationSubject` описывает ожидаемые свойства одного предмета. |
+| Array | array | массив | `EducationSubject[]` — список объектов предметов. |
+| Object | objekt | объект | Один subject содержит `id`, `name`, `color`. |
+| map() | map | преобразование массива | Создаёт `EducationCard` для каждого предмета. |
+| Iteration | iteration | один шаг перебора | На каждой iteration переменная `subject` содержит один объект. |
+| key | key | уникальный ключ React | `key={subject.id}` помогает React различать карточки. |
+| Conditional rendering | betinget rendering | условный рендеринг | Выбирает loading, error, empty state или grid. |
+
+## 4. TypeScript type данных API
+
+```ts
+export type EducationSubject = {
+  id: number;
+  name: string;
+  color: string;
+};
+```
+
+- `id` — число и стабильный идентификатор;
+- `name` — строка с названием;
+- `color` — строка HEX без символа `#`;
+- `EducationSubject[]` — массив объектов такой формы.
+
+```tsx
+const [subjects, setSubjects] = useState<EducationSubject[]>([]);
+```
+
+Начальное значение — пустой массив, потому что до ответа сервера данных ещё нет. TypeScript знает, что у элементов доступны `id`, `name` и `color`.
+
+Важно: TypeScript проверяет наш код во время разработки, но сам по себе не проверяет настоящий JSON во время выполнения. Если backend нарушит контракт, для runtime-проверки понадобится отдельная validation-схема.
+
+## 5. Три state в EducationList
+
+```tsx
+const [subjects, setSubjects] = useState<EducationSubject[]>([]);
+const [isLoading, setIsLoading] = useState(true);
+const [error, setError] = useState("");
+```
+
+```text
+subjects   → полученные предметы
+isLoading  → выполняется ли запрос
+error      → безопасное сообщение об ошибке
+```
+
+Это array destructuring: `useState` возвращает пару `[currentValue, setter]`.
+
+## 6. Как работает fetch внутри useEffect
+
+```tsx
+useEffect(() => {
+  const fetchEducation = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const response = await fetch(EDUCATION_ENDPOINT);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const data: EducationSubject[] = await response.json();
+      setSubjects(data);
+    } catch {
+      setError("Undervisningsfagene kunne ikke hentes.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  void fetchEducation();
+}, []);
+```
+
+Callback самого `useEffect` не объявлен `async`, потому что async-функция возвращает Promise, а effect callback может вернуть только cleanup-функцию или ничего. Поэтому внутри объявлена отдельная `fetchEducation`.
+
+`void fetchEducation()` запускает async-функцию и явно показывает, что возвращаемый Promise не используется самим effect.
+
+### response.ok
+
+`fetch()` отклоняет Promise при network-проблеме, но HTTP `404` или `500` не всегда автоматически попадает в `catch`. Поэтому код самостоятельно проверяет `response.ok` и создаёт ошибку через `throw`.
+
+### Promise и await
+
+```text
+fetch()          → Promise<Response>
+response.json()  → Promise с JavaScript data
+await            → получает результат Promise внутри async-функции
+```
+
+Состояния Promise:
+
+- `pending` — операция выполняется;
+- `fulfilled` — завершилась успешно;
+- `rejected` — завершилась ошибкой.
+
+`await` не блокирует весь browser UI. Пока network-операция выполняется, React может показывать loading.
+
+### try, catch, finally
+
+- `try` содержит потенциально неуспешный request;
+- `catch` сохраняет понятную пользователю ошибку без stack trace;
+- `finally` выполняется всегда и устанавливает `isLoading(false)`.
+
+## 7. Асинхронная последовательность
+
+```text
+первый render
+→ subjects === []
+→ isLoading === true
+→ показано "Henter undervisningsfag..."
+→ после render запускается useEffect
+→ fetch отправляет GET request
+→ API возвращает Response
+→ response.ok проверяет status code
+→ response.json() возвращает Promise
+→ await получает массив JavaScript-объектов
+→ setSubjects сохраняет массив
+→ finally вызывает setIsLoading(false)
+→ React выполняет re-render
+→ map() создаёт 9 EducationCard
+```
+
+Пустой dependency array `[]` означает запуск при mount. `setSubjects` вызывает re-render, но не создаёт бесконечный request-loop: dependencies эффекта не изменились.
+
+В development `StrictMode` может специально выполнить цикл effect дополнительный раз для проверки. Это не означает, что `[]` работает неправильно. В production effect с `[]` запускается при mount компонента.
+
+## 8. Request и response этого проекта
+
+```tsx
+fetch("http://localhost:4000/api/education")
+```
+
+```text
+Method        → GET
+Request       → запрос от React frontend
+Endpoint      → /api/education
+Server        → локальный Express API
+Response      → объект HTTP Response
+Response body → JSON-массив из 9 предметов
+```
+
+Специальные request headers, body, query parameters и authorization этому публичному GET-запросу не нужны.
+
+## 9. CORS
+
+Frontend и backend имеют разные origins из-за разных портов. CORS определяет, разрешено ли frontend с одного origin обращаться к backend на другом. В API преподавателя подключён пакет `cors`, поэтому browser может принять response.
+
+Если CORS не разрешён сервером, request может дойти до API, но browser не даст frontend прочитать response.
+
+## 10. Conditional rendering состояний
+
+Порядок проверок:
+
+```text
+isLoading
+→ error
+→ subjects.length === 0
+→ grid
+```
+
+- Во время запроса: `Henter undervisningsfag...`.
+- При выключенном API: `Undervisningsfagene kunne ikke hentes.`.
+- При пустом массиве: `Der er ingen undervisningsfag at vise.`.
+- При данных: grid карточек.
+
+`subjects` всегда является массивом, поэтому после успешной загрузки можно безопасно вызвать `map()`.
+
+## 11. map(), iteration и key
+
+```tsx
+{subjects.map((subject) => (
+  <EducationCard
+    key={subject.id}
+    name={subject.name}
+    color={subject.color}
+  />
+))}
+```
+
+- `map()` проходит по всему массиву;
+- `subject` на каждой iteration — один объект;
+- результат — новый массив JSX-elements;
+- `subject.id` — обычное значение объекта;
+- `key={subject.id}` — специальный идентификатор React и не обычный prop карточки;
+- ID лучше index, потому что он стабилен и принадлежит данным.
+
+## 12. Динамический цвет карточки
+
+API возвращает `A41942`, а CSS ожидает `#A41942`. `EducationCard` передаёт цвет transient prop `$color`:
+
+```tsx
+<EducationCardStyled $color={color}>
+```
+
+Styled-component формирует CSS без inline style:
+
+```ts
+background-color: ${({ $color }) => `#${$color}`};
+```
+
+Карточка является molecule: она объединяет данные и оформление одного предмета, но не хранит state и не выполняет request.
+
+## 13. Fetch и React Query
+
+| Fetch | React Query |
+| --- | --- |
+| Встроен в browser | Внешняя библиотека |
+| State создаём самостоятельно | Управляет server state |
+| Loading и error делаем сами | Предоставляет готовые состояния |
+| Нет автоматического caching | Поддерживает caching |
+| Используется в этом задании | Будет изучаться позднее |
+
+React Query и Axios не установлены, потому что учебная цель — понять обычные `fetch`, `useState`, `useEffect` и `map()`.
+
+## 14. Обновление статусов MÅ IKKE SLETTES
+
+```text
+Promises       → Brugt i projektet через fetch и response.json
+Fetch          → Brugt i projektet в EducationList
+HTTP Method    → Brugt i projektet: GET
+Request        → frontend отправляет request
+Response       → API возвращает JSON response
+Endpoint       → /api/education
+Hooks          → useState и useEffect
+Iteration      → map()
+Data types     → number, string, array, boolean, object
+Conditions     → loading, error, empty state
+Operators      → !, &&, ===
+Destructuring  → пары state/setter из useState
+Query          → Forklaret, men ikke implementeret в этом request
+Bearer Token   → Forklaret, но публичному endpoint не нужен
+```
+
+## 15. Как объяснить преподавателю
+
+### По-русски
+
+Данные предметов получает organism `EducationList`. При первом render массив `subjects` пустой, а `isLoading` равен `true`. После render `useEffect` запускает внутреннюю async-функцию. `fetch` отправляет GET request на endpoint `/api/education`. Response проверяется через `response.ok`, а `response.json()` преобразует JSON в JavaScript data. `setSubjects` сохраняет массив в state и вызывает re-render. После завершения loading выключается, и `map()` создаёт `EducationCard` для каждого предмета. В качестве уникального key используется `subject.id`. Пустой dependency array означает запуск effect при mount.
+
+Если request не удался, `catch` сохраняет error message. `finally` выключает loading при любом результате.
+
+### På dansk
+
+`EducationList` henter fagene fra API'et med `fetch`. Dataene gemmes i state som et array. `useEffect` har et tomt dependency array, så API-kaldet starter, når komponentet bliver mounted. Når svaret kommer tilbage, kontrollerer koden `response.ok` og læser JSON-dataene. `setSubjects` giver et nyt render, og `map()` opretter et `EducationCard` for hvert fag. Fagets `id` bruges som en unik key. Mens requesten kører, vises en loading-tekst. Hvis requesten fejler, vises en fejlbesked, og `finally` stopper loading.
+
+## 16. Вопросы для проверки знаний
+
+1. Что возвращает `fetch()`?
+2. Почему функция внутри effect объявлена `async`?
+3. Что делает `await`?
+4. Что такое endpoint?
+5. Какой HTTP method используется?
+6. Чем request отличается от response?
+7. Зачем проверять `response.ok`?
+8. Что делает `response.json()`?
+9. Почему данные хранятся в state?
+10. Почему используется `EducationSubject[]`?
+11. Когда запускается `useEffect(..., [])`?
+12. Почему `setSubjects` не создаёт бесконечный цикл?
+13. Что делает `map()`?
+14. Зачем нужен `key`?
+15. Почему используется `subject.id`, а не index?
+16. Что показывается во время loading?
+17. Что происходит при выключенном API?
+18. Зачем нужен `try/catch/finally`?
+19. Что такое CORS?
+20. Почему для этого endpoint не нужен Bearer Token?
+
+<details>
+<summary>Ответы</summary>
+
+1. `Promise<Response>`.
+2. Чтобы внутри использовать `await`; отдельная функция нужна, потому что effect callback не должен возвращать Promise.
+3. Ожидает Promise внутри async-функции, не блокируя весь browser.
+4. Конкретный адрес операции API.
+5. `GET`.
+6. Request идёт от клиента к серверу, response — от сервера к клиенту.
+7. HTTP 404/500 сами по себе не всегда переводят fetch в `catch`.
+8. Асинхронно читает JSON body и возвращает Promise.
+9. Setter вызывает re-render с новыми данными.
+10. State хранит массив объектов формы `EducationSubject`.
+11. После mount компонента; StrictMode может проверить effect повторно в development.
+12. После re-render пустые dependencies не изменяются.
+13. Создаёт новый JSX-element для каждого элемента массива.
+14. Помогает React стабильно различать элементы списка.
+15. ID принадлежит данным и стабилен, а index зависит от позиции.
+16. `Henter undervisningsfag...`.
+17. `catch` сохраняет сообщение `Undervisningsfagene kunne ikke hentes.`.
+18. `try` выполняет request, `catch` обрабатывает ошибку, `finally` всегда выключает loading.
+19. Правило browser, разрешающее или запрещающее запрос между разными origins.
+20. Education endpoint публичный и не требует authorization.
+
+</details>
