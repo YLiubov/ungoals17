@@ -793,3 +793,259 @@ Setter внутри effect не всегда создаёт цикл. Цикл �
 В `CustomGoalDesigner` значения полей хранятся в state и обновляются через `onChange`. Каждый `useEffect` получает функцию проверки и свой dependency array. Effect текста зависит от `goalText`, а effect цвета — от `backgroundColor`, поэтому каждая проверка запускается после первого render и после изменения соответствующего поля.
 
 Результат validation сохраняется в отдельных error-state. Conditional rendering показывает сообщение только тогда, когда error-state содержит текст. Поля связаны с сообщениями через `aria-invalid` и `aria-describedby`. Submit предотвращает перезагрузку страницы, а reset возвращает начальные значения и повторно запускает validation.
+
+---
+
+# Лайки, связанные с конкретным verdensmål
+
+## 1. Результат задания
+
+Теперь лайк относится не к кнопке и не к странице вообще, а к конкретному `goal.id`.
+
+Пример состояния:
+
+```ts
+["1", "5", "12"]
+```
+
+Это означает, что лайкнуты цели №1, №5 и №12. Если перейти между React routes, массив остаётся в `AppRouter`, поэтому лайки сохраняются. После обычного обновления вкладки приложение запускается заново и массив снова становится пустым, потому что `localStorage` пока не используется.
+
+## 2. Базовый conditional rendering
+
+`conditional rendering` — условный рендеринг. React показывает разный JSX в зависимости от условия.
+
+Обычный boolean может выглядеть так:
+
+```tsx
+const isLiked = false;
+```
+
+Если заменить `false` на `true`, результат условий изменится.
+
+### Ternary operator — тернарный оператор
+
+```tsx
+isLiked ? "Liked" : "Like"
+```
+
+Структура:
+
+```text
+условие ? значение_если_true : значение_если_false
+```
+
+Тернарный оператор выбирает одно из двух значений. В итоговом интерфейсе видимый текст у кнопки убран, но тернарный оператор по-прежнему выбирает заливку сердца и `aria-label`.
+
+### Оператор &&
+
+```tsx
+isLiked && <p>Du synes godt om dette verdensmål.</p>
+```
+
+Если слева `true`, React отображает JSX справа. Если слева `false`, JSX не отображается. В итоговом интерфейсе сообщение под кнопкой убрано по дизайну, а этот приём используется для белого сердца на карточке.
+
+## 3. Почему одного boolean недостаточно
+
+```tsx
+const [liked, setLiked] = useState(false);
+```
+
+Один boolean отвечает только на вопрос «да или нет», но не хранит информацию о том, какая из 17 целей лайкнута.
+
+Кроме того, при переходе с `/maal/1` на `/maal/5` React может оставить тот же экземпляр `GoalPage` смонтированным и только передать ему другой параметр URL. Локальное значение `true` тогда могло бы ошибочно показываться уже для цели №5.
+
+Правильный вопрос для состояния:
+
+```text
+Какие ID сейчас лайкнуты?
+```
+
+Поэтому используется массив строк:
+
+```tsx
+const [likedGoalIds, setLikedGoalIds] = useState<string[]>([]);
+```
+
+## 4. Основные термины
+
+- `state` — состояние, данные компонента, изменение которых вызывает re-render.
+- `local state` — локальное состояние, доступное только компоненту-владельцу.
+- `shared state` — общее состояние, нужное нескольким компонентам.
+- `lifting state up` — поднятие состояния в ближайшего общего родителя.
+- `single source of truth` — единый источник истины. Массив ID хранится только в одном месте.
+- `props` — данные и callback-функции, передаваемые от родителя ребёнку.
+- `prop drilling` — передача props через несколько уровней компонентов.
+- `controlled component` — управляемый компонент, состояние которого приходит от родителя через props.
+- `callback` — функция, которую родитель передаёт ребёнку, чтобы ребёнок мог сообщить о событии.
+- `re-render` — повторное выполнение компонента для обновления интерфейса.
+- `mount` — появление экземпляра компонента в React-дереве.
+- `unmount` — удаление экземпляра компонента из React-дерева.
+
+## 5. Где теперь хранится state
+
+State находится в `src/router/AppRouter.tsx`.
+
+```text
+App
+└── AppRouter ← владеет likedGoalIds
+    ├── HomePage
+    │   └── GoalList
+    │       └── GoalCard
+    └── GoalPage
+        ├── LikeButton
+        └── GoalList
+            └── GoalCard
+```
+
+`AppRouter` выбран потому, что он находится выше `HomePage` и `GoalPage` и не размонтируется при переходе между целями. Поэтому обе страницы получают один и тот же источник данных.
+
+## 6. Функция переключения лайка
+
+```tsx
+const toggleGoalLike = (goalId: string) => {
+  setLikedGoalIds((currentIds) =>
+    currentIds.includes(goalId)
+      ? currentIds.filter((id) => id !== goalId)
+      : [...currentIds, goalId],
+  );
+};
+```
+
+Разбор:
+
+1. `goalId` — ID цели, кнопку которой нажал пользователь.
+2. `currentIds` — самое актуальное предыдущее значение state, которое React передаёт функции.
+3. `includes(goalId)` возвращает `true`, если ID уже есть в массиве.
+4. Если ID найден, `filter()` создаёт новый массив без этого ID.
+5. Если ID не найден, `[...currentIds, goalId]` создаёт новый массив, копирует старые ID и добавляет новый.
+6. Setter получает новый массив и запускает re-render.
+
+### Почему нельзя изменять массив напрямую
+
+Неправильно:
+
+```tsx
+likedGoalIds.push(goalId);
+```
+
+`push()` изменяет старый массив. React state нужно обновлять иммутабельно — создавать новый массив через `filter()` или spread operator.
+
+### Functional state update
+
+```tsx
+setLikedGoalIds((currentIds) => ...);
+```
+
+Это `functional state update` — функциональное обновление состояния. Оно безопаснее обращения к `likedGoalIds` внутри setter, потому что React передаёт функции самое актуальное значение, даже если несколько обновлений выполняются рядом.
+
+## 7. LikeButton как controlled component
+
+Собственный `useState` удалён из `LikeButton`. Его контракт находится в `LikeButton.types.ts`:
+
+```ts
+export type LikeButtonProps = {
+  isLiked: boolean;
+  onToggle: () => void;
+};
+```
+
+- `isLiked` сообщает кнопке текущее состояние.
+- `onToggle` сообщает родителю, что пользователь нажал кнопку.
+- `LikeButton` отображает данные, но не хранит их источник истины.
+- `onClick={onToggle}` передаёт функцию. Скобок нет, поэтому функция не вызывается во время render.
+- `type="button"` не позволяет кнопке случайно отправлять форму.
+- `aria-pressed` сообщает assistive technologies, нажата ли toggle-кнопка.
+- `aria-label` получает понятное действие: поставить или убрать лайк.
+
+## 8. Как GoalPage определяет текущий лайк
+
+```tsx
+const { id } = useParams<{ id: string }>();
+const goal = goals.find((currentGoal) => currentGoal.id === id);
+```
+
+`useParams()` читает динамический параметр URL. `find()` возвращает один объект цели с подходящим ID. После проверки `if (!goal)` TypeScript знает, что `goal` существует.
+
+```tsx
+const isLiked = likedGoalIds.includes(goal.id);
+```
+
+Далее кнопка получает boolean и callback именно для текущего ID:
+
+```tsx
+<LikeButton
+  isLiked={isLiked}
+  onToggle={() => onToggleGoalLike(goal.id)}
+/>
+```
+
+Стрелочная функция нужна потому, что `onToggleGoalLike` ожидает аргумент, а `LikeButton` должен получить готовую функцию без аргументов.
+
+## 9. Полная цепочка события
+
+```text
+URL /maal/5
+→ useParams получает id "5"
+→ find находит объект goal №5
+→ includes проверяет наличие "5" в likedGoalIds
+→ LikeButton получает isLiked
+→ пользователь вызывает onToggle кликом
+→ toggleGoalLike получает "5"
+→ setter создаёт новый массив ID
+→ React выполняет re-render
+→ кнопка и карточки получают новое состояние
+```
+
+Важно: данные передаются вниз через props, а событие передаётся вверх через callback.
+
+## 10. GoalList и GoalCard
+
+Один и тот же `GoalList` используется на главной странице и на странице цели. Он получает весь массив `likedGoalIds`.
+
+Внутри `map()` проверка выполняется отдельно для каждого объекта:
+
+```tsx
+isLiked={likedGoalIds.includes(goal.id)}
+```
+
+`GoalCard` получает уже готовый boolean. Если он равен `true`, оператор `&&` показывает белый контур сердца.
+
+Сердце является только визуальным индикатором:
+
+- оно имеет `aria-hidden="true"`, чтобы screen reader не воспринимал его как повторное управление;
+- у него `pointer-events: none`;
+- оно не является кнопкой;
+- оно находится внутри существующего `Link`, но не создаёт вложенный интерактивный элемент;
+- карточка имеет `position: relative`, а сердце — `position: absolute`, `right` и `bottom`.
+
+## 11. Почему состояние переживает route-переход, но не refresh
+
+Переход через React Router не перезапускает всё приложение. `AppRouter` продолжает существовать, поэтому его state сохраняется.
+
+При browser refresh JavaScript-приложение запускается заново:
+
+```tsx
+useState<string[]>([])
+```
+
+снова создаёт пустой массив. Это ожидаемое поведение задания. Для сохранения после refresh позже понадобится `localStorage`, API или другое постоянное хранилище.
+
+## 12. Что проверить вручную
+
+1. Открыть `/maal/1`: кнопка показывает `Like`.
+2. Нажать её: сердце кнопки заполняется основным цветом темы.
+3. В списке на карточке №1 появляется белое сердце.
+4. Перейти на `/maal/5`: она ещё не лайкнута.
+5. Лайкнуть №5: сердца есть у №1 и №5.
+6. Вернуться к №1: её лайк сохранился.
+7. Убрать лайк №1: исчезает только её сердце.
+8. Обновить браузер: все лайки сбрасываются.
+9. Открыть `/maal/999`: отображается `NotFoundPage`.
+
+## 13. Как коротко объяснить преподавателю по-русски
+
+Одного boolean недостаточно для 17 целей, поэтому ID лайкнутых целей хранятся в массиве. State поднят в `AppRouter`, который не размонтируется при переходе между routes. `includes()` проверяет, лайкнута ли конкретная цель. `LikeButton` является controlled component и получает `isLiked` и callback через props. Тернарный оператор меняет заливку и доступное название кнопки, а `&&` показывает сердце на `GoalCard`. Поэтому каждый лайк связан с `goal.id` и не переносится на другую цель.
+
+## 14. Kort forklaring på dansk
+
+Én boolean er ikke nok til 17 verdensmål, så ID'erne på de likede mål gemmes i et array. State er løftet op i `AppRouter`, som ikke bliver afmonteret, når brugeren skifter mellem routes. `includes()` undersøger, om et bestemt `goal.id` findes i arrayet. `LikeButton` er en controlled component og modtager `isLiked` og en callback gennem props. En ternary operator ændrer hjertets fyld og knappens tilgængelige navn, mens `&&` viser hjertet på `GoalCard`. Derfor tilhører hvert like det korrekte verdensmål.

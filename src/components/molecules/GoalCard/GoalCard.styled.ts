@@ -12,6 +12,7 @@ export const GoalCardStyled =
 
     display: flex;
     flex-direction: column;
+    position: relative;
 
     color: #ffffff;
     text-decoration: none;
@@ -64,6 +65,24 @@ export const GoalCardStyled =
       }
 
       svg line {
+        stroke: currentColor;
+      }
+    }
+
+    .goalCardLikedIcon {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 28px;
+      height: 28px;
+      color: #ffffff;
+      pointer-events: none;
+
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        fill: none;
         stroke: currentColor;
       }
     }

@@ -1,5 +1,10 @@
 import styled from "styled-components";
 
+export const LikeButtonWrapper = styled.div`
+  width: 64px;
+  text-align: center;
+`;
+
 export const LikeButtonStyled = styled.button`
   width: 64px;
   height: 64px;

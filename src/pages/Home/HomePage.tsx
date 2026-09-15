@@ -1,7 +1,11 @@
 import { ContentWrapper } from "../../layouts/ContentWrapper/ContentWrapper";
 import { GoalList } from "../../components/organisms/GoalList/GoalList";
 
-export const HomePage = () => {
+type HomePageProps = {
+  likedGoalIds: string[];
+};
+
+export const HomePage = ({ likedGoalIds }: HomePageProps) => {
   return (
     <>
       <ContentWrapper
@@ -44,7 +48,7 @@ export const HomePage = () => {
         </p>
       </ContentWrapper>
 
-      <GoalList />
+      <GoalList likedGoalIds={likedGoalIds} />
     </>
   );
 };

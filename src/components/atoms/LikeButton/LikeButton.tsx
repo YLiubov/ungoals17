@@ -1,23 +1,22 @@
-import { useState } from "react";
 import { Heart } from "lucide-react";
 
-import { LikeButtonStyled } from "./LikeButton.styled";
+import type { LikeButtonProps } from "./LikeButton.types";
+import {
+  LikeButtonStyled,
+  LikeButtonWrapper,
+} from "./LikeButton.styled";
 
-export const LikeButton = () => {
-  const [liked, setLiked] = useState(false);
-
-  const handleLikeClick = () => {
-    setLiked(!liked);
-  };
-
+export const LikeButton = ({ isLiked, onToggle }: LikeButtonProps) => {
   return (
-    <LikeButtonStyled
-      type="button"
-      aria-pressed={liked}
-      aria-label={liked ? "Fjern like" : "Synes godt om"}
-      onClick={handleLikeClick}
-    >
-      <Heart fill={liked ? "currentColor" : "none"} />
-    </LikeButtonStyled>
+    <LikeButtonWrapper>
+      <LikeButtonStyled
+        type="button"
+        aria-pressed={isLiked}
+        aria-label={isLiked ? "Fjern like" : "Synes godt om"}
+        onClick={onToggle}
+      >
+        <Heart fill={isLiked ? "currentColor" : "none"} />
+      </LikeButtonStyled>
+    </LikeButtonWrapper>
   );
 };

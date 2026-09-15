@@ -1,3 +1,5 @@
+import { Heart } from "lucide-react";
+
 import { GoalCardStyled } from "./GoalCard.styled";
 
 import type {
@@ -9,6 +11,7 @@ export const GoalCard = ({
   title,
   color,
   icon,
+  isLiked,
 }: GoalCardProps) => {
   return (
     <GoalCardStyled
@@ -27,6 +30,12 @@ export const GoalCard = ({
           __html: icon,
         }}
       />
+
+      {isLiked && (
+        <span className="goalCardLikedIcon" aria-hidden="true">
+          <Heart />
+        </span>
+      )}
     </GoalCardStyled>
   );
 };

@@ -18,6 +18,10 @@ export const GoalPageStyled = styled.div`
   }
 
   @media (max-width: 800px) {
+    .goalPageMedia {
+      flex-direction: column;
+    }
+
     iframe {
       width: 100%;
     }

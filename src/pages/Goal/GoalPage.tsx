@@ -9,7 +9,15 @@ import { NotFoundPage } from "../NotFound/NotFoundPage";
 
 import { GoalPageStyled } from "./GoalPage.styled";
 
-export const GoalPage = () => {
+type GoalPageProps = {
+  likedGoalIds: string[];
+  onToggleGoalLike: (goalId: string) => void;
+};
+
+export const GoalPage = ({
+  likedGoalIds,
+  onToggleGoalLike,
+}: GoalPageProps) => {
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
@@ -24,6 +32,8 @@ export const GoalPage = () => {
   if (!goal) {
     return <NotFoundPage />;
   }
+
+  const isLiked = likedGoalIds.includes(goal.id);
 
   const descriptionParagraphs = goal.description
     .replaceAll("&nbsp;", " ")
@@ -43,7 +53,10 @@ export const GoalPage = () => {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
-            <LikeButton />
+            <LikeButton
+              isLiked={isLiked}
+              onToggle={() => onToggleGoalLike(goal.id)}
+            />
           </div>
 
           <div className="goalPageDescription">
@@ -54,7 +67,7 @@ export const GoalPage = () => {
         </GoalPageStyled>
       </ContentWrapper>
 
-      <GoalList />
+      <GoalList likedGoalIds={likedGoalIds} />
     </>
   );
 };

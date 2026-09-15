@@ -7,7 +7,11 @@ import { GoalCard } from "../../molecules/GoalCard/GoalCard";
 
 import { GoalListStyled } from "./GoalList.styled";
 
-export const GoalList = () => {
+type GoalListProps = {
+  likedGoalIds: string[];
+};
+
+export const GoalList = ({ likedGoalIds }: GoalListProps) => {
   return (
     <GoalListStyled>
       <div className="goalListContent">
@@ -35,6 +39,7 @@ export const GoalList = () => {
                 title={goal.title}
                 color={goal.color}
                 icon={goal.icon}
+                isLiked={likedGoalIds.includes(goal.id)}
               />
             ))}
 
