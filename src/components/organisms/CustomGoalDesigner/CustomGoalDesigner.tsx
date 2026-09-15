@@ -10,6 +10,38 @@ import { CustomGoalDesignerStyled } from "./CustomGoalDesigner.styled";
 
 const INITIAL_GOAL_TEXT = "";
 const INITIAL_BACKGROUND_COLOR = theme.colors.primary;
+const MAX_GOAL_TEXT_LENGTH = 30;
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+const isValidHexColor = (value: string) =>
+  HEX_COLOR_PATTERN.test(value.trim());
+
+const isValidGoalText = (value: string) =>
+  value.trim() !== "" && value.length <= MAX_GOAL_TEXT_LENGTH;
+
+const getGoalTextError = (value: string) => {
+  if (value.trim() === "") {
+    return "Målteksten må ikke være tom.";
+  }
+
+  if (value.length > MAX_GOAL_TEXT_LENGTH) {
+    return "Målteksten må højst indeholde 30 tegn.";
+  }
+
+  return "";
+};
+
+const getBackgroundColorError = (value: string) => {
+  if (value.trim() === "") {
+    return "Farvekoden må ikke være tom.";
+  }
+
+  if (!isValidHexColor(value)) {
+    return "Indtast en gyldig HEX-farve, f.eks. #fff eller #ff0000.";
+  }
+
+  return "";
+};
 
 export const CustomGoalDesigner = () => {
   const [goalText, setGoalText] = useState(INITIAL_GOAL_TEXT);
@@ -18,25 +50,43 @@ export const CustomGoalDesigner = () => {
   );
   const [goalTextError, setGoalTextError] = useState("");
   const [backgroundColorError, setBackgroundColorError] = useState("");
+  const [goalTextTouched, setGoalTextTouched] = useState(false);
+  const [goalTextLimitExceeded, setGoalTextLimitExceeded] = useState(false);
 
   useEffect(() => {
     // Учебное требование: сохраняем результат validation в error-state.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGoalTextError(
-      goalText.trim() === "" ? "Du skal skrive dit eget verdensmål." : "",
+      goalTextLimitExceeded
+        ? "Målteksten må højst indeholde 30 tegn."
+        : goalTextTouched
+          ? getGoalTextError(goalText)
+          : "",
     );
-  }, [goalText]);
+  }, [goalText, goalTextTouched, goalTextLimitExceeded]);
 
   useEffect(() => {
     // Учебное требование: сохраняем результат validation в error-state.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBackgroundColorError(
-      backgroundColor.trim() === "" ? "Du skal vælge en farve." : "",
-    );
+    setBackgroundColorError(getBackgroundColorError(backgroundColor));
   }, [backgroundColor]);
 
   const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setGoalText(event.target.value);
+    const nextGoalText = event.target.value;
+
+    setGoalTextTouched(true);
+
+    if (nextGoalText.length > MAX_GOAL_TEXT_LENGTH) {
+      setGoalTextLimitExceeded(true);
+      return;
+    }
+
+    setGoalTextLimitExceeded(false);
+    setGoalText(nextGoalText);
+  };
+
+  const handleTextBlur = () => {
+    setGoalTextTouched(true);
   };
 
   const handleBackgroundColorChange = (
@@ -47,15 +97,26 @@ export const CustomGoalDesigner = () => {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setGoalTextTouched(true);
+
+    if (!isValidGoalText(goalText) || !isValidHexColor(backgroundColor)) {
+      return;
+    }
   };
 
   const handleReset = () => {
     setGoalText(INITIAL_GOAL_TEXT);
     setBackgroundColor(INITIAL_BACKGROUND_COLOR);
+    setGoalTextTouched(false);
+    setGoalTextLimitExceeded(false);
   };
 
+  const previewColor = isValidHexColor(backgroundColor)
+    ? backgroundColor
+    : INITIAL_BACKGROUND_COLOR;
+
   return (
-    <CustomGoalDesignerStyled $backgroundColor={backgroundColor}>
+    <CustomGoalDesignerStyled $backgroundColor={previewColor}>
       <div className="customGoalIntro">
         <h2>Mangler der et mål?</h2>
         <p>
@@ -75,19 +136,29 @@ export const CustomGoalDesigner = () => {
               placeholder="Indtast titel på mål"
               value={goalText}
               onChange={handleTextChange}
+              onBlur={handleTextBlur}
               aria-invalid={Boolean(goalTextError)}
               aria-describedby={goalTextError ? "goalTextError" : undefined}
             />
 
-            {goalTextError && (
-              <p
-                id="goalTextError"
-                className="customGoalError"
-                aria-live="polite"
+            <div className="customGoalTextFeedback">
+              {goalTextError && (
+                <p
+                  id="goalTextError"
+                  className="customGoalError"
+                  aria-live="polite"
+                >
+                  {goalTextError}
+                </p>
+              )}
+
+              <span
+                className="customGoalCharacterCount"
+                data-invalid={goalTextLimitExceeded}
               >
-                {goalTextError}
-              </p>
-            )}
+                {goalText.length} / {MAX_GOAL_TEXT_LENGTH}
+              </span>
+            </div>
           </div>
 
           <div className="customGoalFieldGroup">

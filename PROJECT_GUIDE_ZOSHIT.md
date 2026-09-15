@@ -476,6 +476,14 @@ Controlled input — управляемое поле — kontrolleret inputfelt
 Single source of truth — единый источник истины
 Error state — состояние сообщения об ошибке
 Touched state — состояние, показывающее взаимодействие с полем
+Regular expression / RegExp — регулярное выражение — regulært udtryk
+Fallback value — безопасное запасное значение — reserveværdi
+Accessibility — доступность — tilgængelighed
+aria-invalid — признак невалидного поля
+aria-describedby — связь поля с пояснением
+trim() — удаление пробелов по краям строки
+length — количество символов или элементов
+test() — проверка строки регулярным выражением
 ```
 
 ## 3. Какие state существуют
@@ -512,7 +520,7 @@ backgroundColorError
 
 ```text
 "" → ошибки нет
-"Du skal skrive dit eget verdensmål." → ошибка есть
+"Målteksten må ikke være tom." → ошибка есть
 ```
 
 ## 4. Controlled inputs
@@ -593,22 +601,38 @@ Effect запускается после первого render и после к�
 ```tsx
 useEffect(() => {
   setGoalTextError(
-    goalText.trim() === "" ? "Du skal skrive dit eget verdensmål." : "",
+    goalTextLimitExceeded
+      ? "Målteksten må højst indeholde 30 tegn."
+      : goalTextTouched
+        ? getGoalTextError(goalText)
+        : "",
   );
-}, [goalText]);
+}, [goalText, goalTextTouched, goalTextLimitExceeded]);
 ```
 
 Логика:
 
 ```text
-goalText.trim() === ""
-→ установить сообщение
-
-goalText.trim() !== ""
-→ установить пустую строку
+goalText.trim() === "" → ошибка пустого поля
+goalText.length > 30 → ошибка превышения длины
+иначе → пустая строка, ошибки нет
 ```
 
 `trim()` удаляет пробелы в начале и конце. Поэтому строка `"   "` тоже считается пустой.
+
+`length` возвращает количество символов. Ровно 30 символов разрешены. При попытке добавить 31-й символ handler не сохраняет новое значение, поэтому input и счётчик остаются на `30 / 30`, но показывается ошибка лимита.
+
+Дополнительные состояния управляют моментом показа ошибки:
+
+```tsx
+const [goalTextTouched, setGoalTextTouched] = useState(false);
+const [goalTextLimitExceeded, setGoalTextLimitExceeded] = useState(false);
+```
+
+- `goalTextTouched` показывает, взаимодействовал ли пользователь с полем;
+- `goalTextLimitExceeded` запоминает попытку ввести больше 30 символов;
+- `onBlur` делает поле touched, даже если пользователь ничего не ввёл;
+- reset возвращает оба значения в `false`.
 
 Полная цепочка:
 
@@ -617,7 +641,7 @@ onChange
 → setGoalText
 → изменяется goalText
 → render
-→ useEffect видит изменение [goalText]
+→ useEffect видит изменение dependencies
 → validation
 → setGoalTextError
 → дополнительный render
@@ -628,15 +652,37 @@ onChange
 
 ```tsx
 useEffect(() => {
-  setBackgroundColorError(
-    backgroundColor.trim() === "" ? "Du skal vælge en farve." : "",
-  );
+  setBackgroundColorError(getBackgroundColorError(backgroundColor));
 }, [backgroundColor]);
 ```
 
 Этот effect зависит только от `backgroundColor`.
 
-Текущий `input type="color"` обычно не позволяет пользователю создать пустое значение. Тем не менее проверка существует, потому что письменное задание требует проверять оба поля.
+Текущий `input type="color"` обычно возвращает полный HEX-код и не позволяет пользователю создать пустое значение. Тем не менее state защищён полной проверкой, потому что значение может в будущем прийти из другого input, props или API.
+
+```tsx
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+```
+
+- `^` — начало строки;
+- `#` — обязательная решётка;
+- `[0-9a-fA-F]` — одна HEX-цифра;
+- `{3}` и `{6}` — ровно 3 или 6 цифр;
+- `|` — один вариант или другой;
+- `$` — конец строки;
+- `test(value)` возвращает boolean соответствия.
+
+Валидны: `#fff`, `#FFF`, `#ff0000`, `#FF0000`. Невалидны: `fff`, `#ff00`, `#gg0000`, `red`.
+
+Preview использует безопасное значение:
+
+```tsx
+const previewColor = isValidHexColor(backgroundColor)
+  ? backgroundColor
+  : INITIAL_BACKGROUND_COLOR;
+```
+
+Это fallback value: невалидная строка не попадает в CSS, вместо неё используется исходный primary-цвет темы.
 
 Мы не добавляем error-state в dependencies того effect, который этот error-state изменяет:
 
@@ -647,32 +693,23 @@ useEffect(() => {
 }, [goalText, goalTextError]);
 ```
 
-Effect использует `goalText` для вычисления ошибки. Поэтому настоящая зависимость — только `goalText`.
+Текстовый effect использует `goalText`, `goalTextTouched` и `goalTextLimitExceeded`, поэтому все три значения находятся в его dependency array. Error-state там нет, потому что effect его создаёт, а не использует для вычисления.
 
 ## 8. Когда запускается validation
 
 Effects с dependencies запускаются и после initial render.
 
-Поэтому начальный `goalText` равен пустой строке и ошибка текста появляется сразу:
+Начальный `goalText` равен пустой строке, но ошибка не появляется сразу:
 
 ```text
 initial render
 → goalText === ""
+→ goalTextTouched === false
 → effect
-→ goalTextError получает сообщение
+→ goalTextError остаётся пустой строкой
 ```
 
-После reset текст снова становится пустым, effect выполняет проверку, и ошибка снова появляется.
-
-Если преподаватель потребует показывать ошибки только после взаимодействия, понадобится отдельный `touched-state`. Сейчас он не добавлен.
-
-Вопрос преподавателю:
-
-```text
-Skal fejlbeskederne vises allerede ved den første rendering, eller først efter at brugeren har ændret feltet eller prøvet at sende formularen?
-```
-
-Перевод: сообщения об ошибках должны показываться при первом render или только после изменения поля либо попытки отправить форму?
+Если пользователь сфокусируется на пустом поле и уйдёт, `onBlur` установит `goalTextTouched` в `true`; после render effect покажет ошибку пустоты. После reset текст снова пустой, но touched-state сбрасывается, поэтому ошибка и красная рамка исчезают.
 
 ## 9. Conditional rendering ошибки
 
@@ -713,10 +750,16 @@ aria-describedby={goalTextError ? "goalTextError" : undefined}
 ```tsx
 const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault();
+
+  if (!isValidGoalText(goalText) || !isValidHexColor(backgroundColor)) {
+    return;
+  }
 };
 ```
 
-`preventDefault()` отменяет стандартную отправку и перезагрузку страницы. Данные никуда не отправляются: в проекте нет API или backend.
+`preventDefault()` отменяет стандартную отправку и перезагрузку страницы. Submit отдельно проверяет актуальные значения, а не ждёт, успели ли effects обновить error-state. Невалидная форма дальше не обрабатывается. Данные никуда не отправляются: в проекте нет API или backend.
+
+Submit также устанавливает `goalTextTouched` в `true`, поэтому попытка отправить нетронутое пустое поле показывает понятную ошибку.
 
 ```tsx
 const handleReset = () => {
@@ -792,7 +835,26 @@ Setter внутри effect не всегда создаёт цикл. Цикл �
 
 В `CustomGoalDesigner` значения полей хранятся в state и обновляются через `onChange`. Каждый `useEffect` получает функцию проверки и свой dependency array. Effect текста зависит от `goalText`, а effect цвета — от `backgroundColor`, поэтому каждая проверка запускается после первого render и после изменения соответствующего поля.
 
-Результат validation сохраняется в отдельных error-state. Conditional rendering показывает сообщение только тогда, когда error-state содержит текст. Поля связаны с сообщениями через `aria-invalid` и `aria-describedby`. Submit предотвращает перезагрузку страницы, а reset возвращает начальные значения и повторно запускает validation.
+Результат validation сохраняется в отдельных error-state. Conditional rendering показывает сообщение только тогда, когда error-state содержит текст. Поля связаны с сообщениями через `aria-invalid` и `aria-describedby`. HEX проверяется одним RegExp, а preview получает введённый цвет только при валидном результате. Submit предотвращает перезагрузку и повторно проверяет актуальные значения, а reset возвращает начальные значения, preview и счётчик и повторно запускает validation.
+
+Простая датская версия:
+
+```text
+Teksten og farven gemmes i hver sin state. Controlled inputs opdaterer state med onChange. Den ene useEffect afhænger af goalText, og den anden afhænger af backgroundColor. Efter et render validerer effekten den nye værdi og opdaterer error state. HEX-koden kontrolleres med et regulært udtryk. Preview bruger kun farven, hvis den er gyldig; ellers bruges standardfarven.
+```
+
+### Контрольные вопросы по useEffect
+
+1. **Что такое side effect?** Действие после render, которое синхронизирует React с чем-то вне вычисления JSX. В этом учебном задании effect используется для обновления error-state.
+2. **Что находится в dependency array?** Reactive values, изменение которых должно повторно запустить effect после render.
+3. **Когда работает `useEffect(..., [])`?** После первого render; в development StrictMode возможен дополнительный проверочный запуск.
+4. **Когда работает текстовый effect?** После первого render и после изменения `goalText`, `goalTextTouched` или `goalTextLimitExceeded`.
+5. **Вызывает ли dependency array re-render?** Нет. Re-render вызывает setter state или новые props.
+6. **Почему текстовый effect имеет три зависимости?** Ошибка зависит от текста, взаимодействия с полем и попытки превысить лимит.
+7. **Почему error-state нет в dependencies?** Effect не использует ошибку для проверки; он её создаёт. Добавление ошибки было бы лишним и могло бы повторно запускать effect.
+8. **Как проверяется HEX?** `RegExp.test()` принимает только `#` и ровно 3 либо 6 HEX-цифр.
+9. **Почему preview безопасен?** Он получает `previewColor`: валидное значение или fallback.
+10. **Чем отличаются `useState` и `useEffect`?** `useState` хранит данные и даёт setter, а `useEffect` выполняет код после render согласно dependencies.
 
 ---
 
@@ -1049,3 +1111,453 @@ useState<string[]>([])
 ## 14. Kort forklaring på dansk
 
 Én boolean er ikke nok til 17 verdensmål, så ID'erne på de likede mål gemmes i et array. State er løftet op i `AppRouter`, som ikke bliver afmonteret, når brugeren skifter mellem routes. `includes()` undersøger, om et bestemt `goal.id` findes i arrayet. `LikeButton` er en controlled component og modtager `isLiked` og en callback gennem props. En ternary operator ændrer hjertets fyld og knappens tilgængelige navn, mens `&&` viser hjertet på `GoalCard`. Derfor tilhører hvert like det korrekte verdensmål.
+
+---
+
+# MÅ IKKE SLETTES — обязательная база JavaScript, Service и React
+
+Этот раздел содержит основные темы курса, которые я должна знать и уметь объяснять. Его нельзя удалять. Для каждой темы указано, где она используется в проекте или когда она будет изучаться.
+
+## Статусы тем
+
+- **Brugt i projektet** — уже используется в настоящем коде проекта.
+- **Forklaret, men ikke implementeret** — объяснено, но специально не добавлено в приложение.
+- **Skal læres senere** — будет изучаться позднее, когда появится реальная архитектурная необходимость.
+
+## 1. JavaScript
+
+### Variables — Variabler — переменные
+
+Переменная хранит значение. `let` разрешает переназначение, `const` запрещает переназначить саму переменную. В React чаще применяется `const`, потому что новые значения state создаются через setter, а не присваиваются переменной напрямую.
+
+```ts
+const goal = goals.find(...);
+const isLiked = likedGoalIds.includes(goal.id);
+const previewColor = isColorValid ? color : fallbackColor;
+```
+
+State variable не является обычной изменяемой переменной: `goalText = "new"` делать нельзя; нужен `setGoalText("new")`. **Статус: Brugt i projektet.**
+
+Вопрос: почему React state нельзя изменить присваиванием? Ответ: setter сообщает React об изменении и запускает re-render. Dansk: *En setter fortæller React, at state er ændret, og starter et nyt render.*
+
+### Constants — Konstanter — константы
+
+`const` создаёт связь имени со значением, которую нельзя переназначить. Но объект или массив внутри `const` технически может быть изменён, поэтому React-массивы всё равно обновляются иммутабельно.
+
+```ts
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const INITIAL_BACKGROUND_COLOR = theme.colors.primary;
+```
+
+RegExp и стандартный цвет удобно хранить в константах: они имеют одно значение и не дублируются. **Статус: Brugt i projektet**, `CustomGoalDesigner.tsx`.
+
+Вопрос: можно ли переназначить `const`? Ответ: нет. Dansk: *Nej, selve konstanten kan ikke tildeles en ny værdi.*
+
+### Condition — Betingelse — условие
+
+`if` проверяет первое условие, `else if` — следующее, `else` выполняется, если предыдущие условия ложны.
+
+```ts
+if (value.trim() === "") {
+  return "empty error";
+} else if (value.length > 30) {
+  return "length error";
+} else {
+  return "";
+}
+```
+
+В реальном коде ранний `return` позволяет не писать лишний `else`, но логика остаётся той же. **Статус: Brugt i projektet**, функции validation.
+
+Вопрос: зачем нужен `else if`? Ответ: чтобы проверить следующее условие, только если первое ложно. Dansk: *Else if kontrollerer en ny betingelse, når den første er falsk.*
+
+### Operators — Operatorer — операторы
+
+| Оператор | Значение | Пример |
+| --- | --- | --- |
+| `=` | присваивание | `const id = "5"` |
+| `===` | строгое сравнение значения и типа | `goal.id === id` |
+| `!==` | строгое «не равно» | `id !== goalId` |
+| `!` | логическое НЕ | `!isValidHexColor(color)` |
+| `&&` | логическое И / условный JSX | `error && <p>{error}</p>` |
+| `\|\|` | логическое ИЛИ | `goalText \|\| "Min måltekst"` |
+| `>` | больше | `goalText.length > 30` |
+| `<` | меньше | `count < 30` |
+| `? :` | ternary, выбор из двух значений | `valid ? color : fallback` |
+| `...` | spread, копирование элементов | `[...currentIds, goalId]` |
+
+`=` присваивает значение, а `===` сравнивает без преобразования типов. **Статус: Brugt i projektet.**
+
+Вопрос: чем `=` отличается от `===`? Ответ: первое присваивает, второе строго сравнивает. Dansk: *`=` tildeler en værdi, mens `===` sammenligner værdi og type.*
+
+### Loops / Iteration — Løkker / iteration — циклы и перебор
+
+Обычный цикл (`for`) повторяет блок кода. Iteration — обработка элементов коллекции. В проекте используются методы массивов:
+
+- `goals.map()` в `GoalList.tsx` возвращает новый массив JSX-карточек;
+- `goals.find()` в `GoalPage.tsx` возвращает первый подходящий объект или `undefined`;
+- `currentIds.filter()` в `AppRouter.tsx` возвращает новый массив элементов, прошедших условие.
+
+**Статус: Brugt i projektet.**
+
+Вопрос: чем `map()` отличается от `find()`? Ответ: `map()` преобразует все элементы, `find()` останавливается на первом совпадении. Dansk: *Map behandler alle elementer, mens find returnerer det første match.*
+
+### Data Types — Datatyper — типы данных
+
+| Тип | Значение | Пример |
+| --- | --- | --- |
+| `string` | текст | `title: string` |
+| `number` | число | `30` |
+| `boolean` | `true` или `false` | `isLiked: boolean` |
+| `array` | список | `likedGoalIds: string[]` |
+| `object` | набор свойств | объект `goal` |
+| `undefined` | значение не найдено/не задано | результат неуспешного `find()` |
+| `null` | намеренное отсутствие значения | часто приходит из API, сейчас почти не нужен |
+| `function` | выполняемый блок кода | `toggleGoalLike` |
+
+TypeScript фиксирует ожидаемый тип: `useState<string>("")`, `useState<boolean>(false)`, `useState<string[]>([])`. Generic часто выводится автоматически из начального значения, но для пустого массива тип указан явно. **Статус: Brugt i projektet.**
+
+Вопрос: зачем TypeScript у state? Ответ: он не позволяет записать значение неправильного типа. Dansk: *TypeScript forhindrer værdier med en forkert type i state.*
+
+### Promises — Promises — промисы
+
+Promise представляет будущий результат асинхронной операции. Состояния: `pending` — ожидание, `fulfilled` — успех, `rejected` — ошибка. `async/await` делает такой код последовательным для чтения, а `try/catch` перехватывает ошибку.
+
+**Статус: Forklaret, men ikke implementeret endnu.** Искусственный Promise в форму не добавлен.
+
+Вопрос: что хранит Promise? Ответ: будущий успешный результат или ошибку. Dansk: *Et Promise repræsenterer et fremtidigt resultat eller en fejl.*
+
+### Fetch
+
+`fetch()` отправляет HTTP request и возвращает Promise. `response.ok` показывает успешность HTTP-ответа, а `response.json()` асинхронно читает JSON.
+
+```ts
+const response = await fetch("/api/goals");
+
+if (!response.ok) {
+  throw new Error("Request failed");
+}
+
+const data = await response.json();
+```
+
+Обычно код помещают в `try/catch`. **Статус: Forklaret, men ikke implementeret endnu**, потому что у проекта нет подключённого API.
+
+Вопрос: что возвращает `fetch()`? Ответ: Promise с HTTP response. Dansk: *Fetch returnerer et Promise med et HTTP-svar.*
+
+### Destructuring — Destrukturering — деструктуризация
+
+Array destructuring берёт значения по позиции:
+
+```ts
+const [goalText, setGoalText] = useState("");
+```
+
+Object destructuring берёт значения по имени свойства:
+
+```ts
+const { id } = useParams();
+```
+
+**Статус: Brugt i projektet**, `CustomGoalDesigner.tsx` и `GoalPage.tsx`.
+
+Вопрос: в чём разница? Ответ: массив разбирается по позиции, объект — по ключу. Dansk: *Et array destruktureres efter position, og et objekt efter property-navn.*
+
+### Ternary operator — Ternær operator — тернарный оператор
+
+```ts
+condition ? valueIfTrue : valueIfFalse
+```
+
+Реальные примеры: безопасный `previewColor`, заливка `Heart`, динамический `aria-label`. Простой ternary удобен для двух коротких результатов. Для нескольких условий и действий понятнее `if`.
+
+```ts
+const previewColor = isValidHexColor(backgroundColor)
+  ? backgroundColor
+  : INITIAL_BACKGROUND_COLOR;
+```
+
+**Статус: Brugt i projektet.**
+
+Вопрос: когда использовать ternary? Ответ: для короткого выбора одного из двух значений. Dansk: *En ternary operator er god til et kort valg mellem to værdier.*
+
+## 2. Service
+
+Все темы Service здесь пока имеют статус **Forklaret, men ikke implementeret endnu**: настоящее API к проекту не подключено.
+
+### HTTP Methods — HTTP-metoder — HTTP-методы
+
+- `GET` — получить данные;
+- `POST` — создать данные;
+- `PUT` — полностью заменить ресурс;
+- `PATCH` — частично изменить ресурс;
+- `DELETE` — удалить ресурс.
+
+Вопрос: чем `PUT` отличается от `PATCH`? Ответ: PUT заменяет ресурс целиком, PATCH изменяет часть. Dansk: *PUT erstatter hele ressourcen, mens PATCH ændrer en del.*
+
+### Request — Forespørgsel — запрос
+
+Frontend отправляет request серверу. В нём могут быть URL, HTTP method, headers, body, query parameters и authorization.
+
+Вопрос: что находится в request? Ответ: адрес, метод и при необходимости headers/body/authorization. Dansk: *En request indeholder en URL, en metode og eventuelt headers, body og authorization.*
+
+### Response — Svar — ответ
+
+Server возвращает response: status code, headers и body, часто JSON.
+
+```text
+200 OK                  — успешно
+201 Created             — создано
+400 Bad Request         — неправильный запрос
+401 Unauthorized        — нет аутентификации
+403 Forbidden           — нет разрешения
+404 Not Found           — ресурс не найден
+500 Internal Server Error — ошибка сервера
+```
+
+React Router `NotFoundPage` похож по смыслу на HTTP 404, но клиентский экран не обязательно означает, что сервер действительно отправил status `404`.
+
+Вопрос: что означает 201? Ответ: сервер успешно создал ресурс. Dansk: *201 betyder, at serveren har oprettet en ressource.*
+
+### Endpoint
+
+Endpoint — конкретный адрес API: `GET /api/goals`, `GET /api/goals/5`, `POST /api/goals`.
+
+Вопрос: что такое endpoint? Ответ: адрес конкретной серверной операции или ресурса. Dansk: *Et endpoint er adressen til en bestemt ressource eller serverhandling.*
+
+### Query / Query parameters
+
+В `/api/goals?color=red&limit=10` значения `color=red` и `limit=10` — query parameters. Они уточняют запрос после `?`.
+
+Не путать:
+
+```text
+/goals/:id      → route parameter
+/goals?id=5     → query parameter
+```
+
+Вопрос: где начинается query string? Ответ: после `?`. Dansk: *En query string begynder efter `?`.*
+
+### Bearer Token
+
+Bearer Token используется для авторизации request и обычно передаётся в header:
+
+```ts
+headers: {
+  Authorization: `Bearer ${token}`,
+}
+```
+
+Настоящий токен нельзя писать в публичном frontend-коде, конспекте или GitHub. В примере секретного значения нет.
+
+Вопрос: где передаётся Bearer Token? Ответ: обычно в header `Authorization`. Dansk: *Et Bearer Token sendes normalt i Authorization-headeren.*
+
+### Общая Service-цепочка
+
+```text
+React component
+→ fetch()
+→ HTTP request
+→ endpoint
+→ server
+→ HTTP response
+→ response.json()
+→ state
+→ re-render
+```
+
+Эта цепочка объяснена, но API в текущем проекте пока отсутствует.
+
+## 3. React
+
+### Component — Komponent — компонент
+
+React-компонент — функция с именем с большой буквы, которая возвращает JSX. Компоненты можно переиспользовать. Примеры: `GoalCard`, `FormField`, `CustomGoalDesigner`.
+
+**Статус: Brugt i projektet.** Вопрос: почему имя с большой буквы? Ответ: так React отличает компонент от HTML-тега. Dansk: *React bruger et stort begyndelsesbogstav til at skelne komponenter fra HTML-tags.*
+
+### Props
+
+Props передают read-only данные от родителя ребёнку. Ребёнок не изменяет props; для события он вызывает callback. TypeScript описывает контракт через `type`, например `GoalCardProps` и `LikeButtonProps`.
+
+**Статус: Brugt i projektet.** Вопрос: можно ли изменить props в ребёнке? Ответ: нет, props только читаются. Dansk: *Nej, props er read-only.*
+
+### props.children
+
+`children` — JSX между открывающим и закрывающим тегами компонента. В `ContentWrapper.types.ts` он имеет тип `ReactNode`, а `ContentWrapper.tsx` выводит `{children}`.
+
+```tsx
+<ContentWrapper title="Byg dit eget mål">
+  <CustomGoalDesigner />
+</ContentWrapper>
+```
+
+**Статус: Brugt i projektet.** Вопрос: что такое children? Ответ: содержимое внутри компонента. Dansk: *Children er indholdet mellem komponentens tags.*
+
+### Styled-components
+
+Styled-component — React-компонент со стилями. `styled.div`, `styled.button` и `styled.form` используют template literal. Динамика приходит через props, например transient prop `$backgroundColor`; `$` не передаёт служебный prop в DOM. Theme даёт общие цвета и шрифты. Вложенные selectors стилизуют внутренние элементы.
+
+**Статус: Brugt i projektet**, все `*.styled.ts`, особенно `CustomGoalDesigner.styled.ts` и `GoalCard.styled.ts`.
+
+Вопрос: зачем transient prop начинается с `$`? Ответ: он нужен стилям и не должен попасть в HTML. Dansk: *En transient prop bruges til styling og sendes ikke videre til HTML.*
+
+### Router
+
+SPA обновляет экран без полной загрузки нового HTML-документа. `BrowserRouter` включает маршрутизацию, `Routes` выбирает совпадение, `Route` связывает path и element, `Link` переходит без перезагрузки, `NavLink` дополнительно знает active-state.
+
+```text
+/maal/:id → dynamic route
+/maal/5   → id равен "5"
+*         → wildcard route для NotFoundPage
+```
+
+`useParams()` читает route parameter. **Статус: Brugt i projektet**, `AppRouter.tsx`, `Navbar.tsx`, `GoalCard.tsx`, `GoalPage.tsx`.
+
+Вопрос: зачем `useParams()`? Ответ: получить динамическое значение из URL. Dansk: *UseParams læser en dynamisk parameter fra URL'en.*
+
+### Hooks
+
+Hook начинается с `use`. Hooks вызываются только на верхнем уровне React-компонента или Custom Hook, не внутри `if`, цикла или вложенной функции. Порядок вызовов должен быть одинаковым при каждом render.
+
+- `useState` из React хранит state;
+- `useEffect` из React выполняется после render согласно dependencies;
+- `useParams` — hook из React Router, а не из React.
+
+**Статус: Brugt i projektet**, `CustomGoalDesigner.tsx`, `AppRouter.tsx`, `GoalPage.tsx`.
+
+Вопрос: можно ли вызвать hook внутри `if`? Ответ: нет, нарушится стабильный порядок hooks. Dansk: *Nej, hooks skal kaldes i samme rækkefølge ved hvert render.*
+
+### Outlet
+
+`Outlet` показывает дочерний route внутри layout родительского route:
+
+```tsx
+<Route element={<Layout />}>
+  <Route path="faq" element={<FaqPage />} />
+</Route>
+
+// внутри Layout
+<Outlet />
+```
+
+**Статус: Skal læres senere — проект пока не использует nested routes.** Router не перестроен искусственно.
+
+Вопрос: зачем нужен Outlet? Ответ: показать дочернюю страницу внутри общего layout. Dansk: *Outlet viser en child route inde i et fælles layout.*
+
+### Custom Hook
+
+Custom Hook — собственная переиспользуемая функция с hooks. Имя начинается с `use`, например `useGoalValidation`. Он извлекает общую state/effect-логику, но его основная задача — не возвращать JSX.
+
+**Статус: Skal læres senere.** Validation пока нужна только одному `CustomGoalDesigner`, поэтому выносить её преждевременно.
+
+Вопрос: когда создавать Custom Hook? Ответ: когда одинаковая hook-логика действительно переиспользуется или стала отдельной понятной задачей. Dansk: *Man laver en Custom Hook, når hook-logikken skal genbruges eller har et klart selvstændigt ansvar.*
+
+## 4. Связь обязательных тем с realtime validation
+
+| Тема | Где используется в `CustomGoalDesigner` |
+| --- | --- |
+| Variable | `goalText`, `backgroundColor`, `goalTextError`, `backgroundColorError` |
+| Constant | `HEX_COLOR_PATTERN`, `MAX_GOAL_TEXT_LENGTH`, initial values |
+| Condition | `if` в функциях получения ошибок и submit |
+| Operator | `!`, `>`, `&&`, `?:`, `\|\|` |
+| Data type | строки ошибок/полей и boolean из validation |
+| Destructuring | пары state и setter из `useState` |
+| Ternary | безопасный `previewColor` |
+| Component | organism `CustomGoalDesigner` |
+| Props | свойства `FormField`, `Input`, `Button` и styled-component |
+| Styled-components | error, character counter, invalid input и preview styles |
+| Hooks | `useState` и два `useEffect` |
+
+Loops, Promises, Fetch и Service не используются непосредственно в realtime validation. Router, Outlet и Custom Hook также не нужны для проверки двух локальных полей.
+
+## 5. Карта реального проекта
+
+| Термин | Реальный файл | Реальный пример | Статус |
+| --- | --- | --- | --- |
+| `map()` | `src/components/organisms/GoalList/GoalList.tsx` | `goals.map(...)` | Brugt i projektet |
+| `find()` | `src/pages/Goal/GoalPage.tsx` | поиск goal по ID | Brugt i projektet |
+| `filter()` | `src/router/AppRouter.tsx` | удаление liked ID | Brugt i projektet |
+| `useParams()` | `src/pages/Goal/GoalPage.tsx` | получение `id` | Brugt i projektet |
+| `useState()` | `CustomGoalDesigner.tsx`, `AppRouter.tsx` | form state и liked IDs | Brugt i projektet |
+| `useEffect()` | `CustomGoalDesigner.tsx`, `GoalPage.tsx` | validation и scroll | Brugt i projektet |
+| styled-components | файлы `*.styled.ts` | `styled.div`, dynamic props, theme | Brugt i projektet |
+| Router | `src/router/AppRouter.tsx` | `BrowserRouter`, `Routes`, `Route` | Brugt i projektet |
+| `Link` | `src/components/molecules/GoalCard/GoalCard.styled.ts` | styled React Router Link | Brugt i projektet |
+| `NavLink` | `src/components/organisms/Navbar/Navbar.tsx` | ссылки навигации | Brugt i projektet |
+| `props.children` | `ContentWrapper.tsx` и `.types.ts` | `children: ReactNode` | Brugt i projektet |
+| RegExp | `CustomGoalDesigner.tsx` | `HEX_COLOR_PATTERN` | Brugt i projektet |
+| Fetch / Promise | реального файла нет | только учебный пример | Forklaret, men ikke implementeret |
+| HTTP / API | реального файла нет | backend не подключён | Forklaret, men ikke implementeret |
+| Outlet | реального файла нет | nested routes отсутствуют | Skal læres senere |
+| Custom Hook | реального файла нет | переиспользования validation пока нет | Skal læres senere |
+
+## 6. План изучения
+
+### Уровень 1 — JavaScript foundation
+
+Variables → constants → data types → conditions → operators → loops/iteration → destructuring → ternary.
+
+### Уровень 2 — React foundation
+
+Components → props → props.children → styled-components → router → hooks.
+
+### Уровень 3 — Asynchronous JavaScript и Service
+
+Promises → fetch → HTTP methods → request/response → endpoint → query → Bearer Token.
+
+### Уровень 4 — React architecture
+
+Outlet → Custom Hook → shared state → reusable logic.
+
+Каждый уровень использует предыдущий: сначала нужно уверенно работать со значениями и условиями, затем строить React UI, после этого получать внешние данные и только потом усложнять архитектуру.
+
+## 7. Что сейчас выучить для задания `useEffect`
+
+В первую очередь нужно уметь своими словами объяснить:
+
+1. Разницу между state и обычной переменной.
+2. Цепочку `onChange → setter → render → useEffect → error setter → re-render`.
+3. Что dependency array не вызывает render.
+4. Почему текстовый effect зависит от текста и UI-состояний взаимодействия, а цветовой — от `[backgroundColor]`.
+5. Как `trim()`, `length` и RegExp проверяют значения.
+6. Почему `&&` показывает ошибку условно.
+7. Почему preview использует fallback.
+8. Как `aria-invalid` и `aria-describedby` связывают поле и ошибку.
+
+Promises, Fetch, HTTP, Bearer Token, Outlet и Custom Hook не относятся напрямую к этому заданию. Их нужно понимать на уровне конспекта, но добавлять в `CustomGoalDesigner` не нужно.
+
+## 8. Checklist обязательных тем
+
+### JavaScript
+
+- [x] Variables
+- [x] Constants
+- [x] Conditions
+- [x] Operators
+- [x] Loops / iteration
+- [x] Data types
+- [x] Promises
+- [x] Fetch
+- [x] Destructuring
+- [x] Ternary
+
+### Service
+
+- [x] HTTP Methods
+- [x] Request
+- [x] Response
+- [x] Endpoint
+- [x] Query
+- [x] Bearer Token
+
+### React
+
+- [x] Component
+- [x] Props
+- [x] props.children
+- [x] Styled-components
+- [x] Router
+- [x] Hooks
+- [x] Outlet
+- [x] Custom Hook

@@ -44,12 +44,38 @@ export const CustomGoalDesignerStyled =
       gap: 8px;
     }
 
-    .customGoalError {
+    .customGoalTextFeedback {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
       min-height: 18px;
       margin: 0 0 0 104px;
+    }
+
+    .customGoalError {
+      margin: 0;
       color: #c5192d;
       font-size: 13px;
       line-height: 1.4;
+    }
+
+    .customGoalFieldGroup > .customGoalError {
+      margin-left: 104px;
+    }
+
+    .customGoalCharacterCount {
+      margin-left: auto;
+      color: ${({ theme }) => theme.colors.navText};
+      font-size: 13px;
+      white-space: nowrap;
+
+      &[data-invalid="true"] {
+        color: #c5192d;
+      }
+    }
+
+    input[aria-invalid="true"] {
+      border-color: #c5192d;
     }
 
     .customGoalColorControl {
@@ -79,6 +105,10 @@ export const CustomGoalDesignerStyled =
       &:focus-within {
         outline: 2px solid ${({ theme }) => theme.colors.primary};
         outline-offset: 2px;
+      }
+
+      &:has(input[aria-invalid="true"]) {
+        border-color: #c5192d;
       }
     }
 
@@ -121,7 +151,8 @@ export const CustomGoalDesignerStyled =
         grid-template-columns: 1fr;
       }
 
-      .customGoalError {
+      .customGoalTextFeedback,
+      .customGoalFieldGroup > .customGoalError {
         margin-left: 0;
       }
     }
