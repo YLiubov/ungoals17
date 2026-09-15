@@ -418,3 +418,378 @@ LikeButton is a standalone Atom component. The useState hook stores the boolean 
 12. Итоговая проверка                      осталось
 13. Bonus: количество likes                по желанию
 ```
+
+---
+
+# CustomGoalDesigner: events, state и validation
+
+## 1. Правильная структура
+
+```text
+CustomGoalPage
+└── ContentWrapper
+    └── CustomGoalDesigner (organism)
+        ├── вводный текст
+        ├── form
+        │   ├── FormField для текста
+        │   ├── составное поле цвета
+        │   │   ├── Label
+        │   │   └── Input type="color"
+        │   ├── submit Button
+        │   └── reset Button
+        └── live preview
+```
+
+`CustomGoalPage` отвечает за страницу. `CustomGoalDesigner` отвечает за законченную интерактивную функциональность, поэтому является organism. Он переиспользует atoms `Input`, `Label`, `Button` и molecule `FormField`.
+
+Файлы компонента:
+
+```text
+src/components/organisms/CustomGoalDesigner/
+├── CustomGoalDesigner.tsx
+└── CustomGoalDesigner.styled.ts
+```
+
+- `.tsx` содержит state, effects, handlers и JSX.
+- `.styled.ts` содержит только локальные стили компонента.
+- Отдельный `.types.ts` не нужен, потому что компонент не принимает props.
+
+## 2. Термины
+
+```text
+Event — событие
+Event handler — обработчик события
+State — состояние — tilstand
+Setter — функция обновления state
+Render — создание JSX
+Re-render — повторный рендеринг
+Effect — эффект
+Side effect — побочный эффект
+useEffect Hook — хук эффекта
+Dependency — зависимость
+Dependency array — массив зависимостей
+Initial render — первый рендер
+Validation — проверка данных
+Real-time validation — проверка в реальном времени
+Conditional rendering — условный рендеринг
+Controlled input — управляемое поле — kontrolleret inputfelt
+Single source of truth — единый источник истины
+Error state — состояние сообщения об ошибке
+Touched state — состояние, показывающее взаимодействие с полем
+```
+
+## 3. Какие state существуют
+
+Основные значения формы:
+
+```tsx
+const [goalText, setGoalText] = useState(INITIAL_GOAL_TEXT);
+const [backgroundColor, setBackgroundColor] = useState(
+  INITIAL_BACKGROUND_COLOR,
+);
+```
+
+Ошибки полей:
+
+```tsx
+const [goalTextError, setGoalTextError] = useState("");
+const [backgroundColorError, setBackgroundColorError] = useState("");
+```
+
+Почему ошибки разделены:
+
+```text
+goalTextError
+→ относится только к тексту
+
+backgroundColorError
+→ относится только к цвету
+```
+
+Один state с названием `error` был бы непонятным: невозможно сразу увидеть, к какому полю относится сообщение.
+
+Пустая строка означает отсутствие ошибки:
+
+```text
+"" → ошибки нет
+"Du skal skrive dit eget verdensmål." → ошибка есть
+```
+
+## 4. Controlled inputs
+
+Текстовое поле:
+
+```text
+goalText
+→ value input
+→ пользователь вводит текст
+→ onChange
+→ handleTextChange
+→ event.target.value
+→ setGoalText
+→ новый goalText
+```
+
+Поле цвета:
+
+```text
+backgroundColor
+→ value input type="color"
+→ пользователь выбирает цвет
+→ onChange
+→ handleBackgroundColorChange
+→ event.target.value
+→ setBackgroundColor
+→ новый backgroundColor
+```
+
+`event.target.value` у обоих inputs имеет тип `string`. Color-input возвращает HEX-строку, например `#2bbbde`.
+
+Поле цвета выглядит как обычное HEX-поле, но поверх отображаемого текста расположен прозрачный `input type="color"`. Поэтому клик открывает системную палитру, а выбранный HEX отображается в поле и используется preview.
+
+## 5. Что принимает useEffect
+
+```tsx
+useEffect(setupFunction, dependencyArray);
+```
+
+Первый аргумент — функция с кодом эффекта.
+
+Второй аргумент — массив reactive values, от которых зависит effect.
+
+```text
+Dependency array не вызывает render.
+Setter изменяет state и вызывает render.
+После render React проверяет dependencies.
+Если зависимость изменилась, запускается effect.
+```
+
+### Без массива зависимостей
+
+```tsx
+useEffect(effect);
+```
+
+Effect запускается после каждого render.
+
+### С пустым массивом
+
+```tsx
+useEffect(effect, []);
+```
+
+Effect запускается после первого render. В development с `StrictMode` React может дополнительно запускать его для проверки.
+
+### С зависимостью
+
+```tsx
+useEffect(effect, [goalText]);
+```
+
+Effect запускается после первого render и после каждого изменения `goalText`.
+
+## 6. Real-time validation текста
+
+```tsx
+useEffect(() => {
+  setGoalTextError(
+    goalText.trim() === "" ? "Du skal skrive dit eget verdensmål." : "",
+  );
+}, [goalText]);
+```
+
+Логика:
+
+```text
+goalText.trim() === ""
+→ установить сообщение
+
+goalText.trim() !== ""
+→ установить пустую строку
+```
+
+`trim()` удаляет пробелы в начале и конце. Поэтому строка `"   "` тоже считается пустой.
+
+Полная цепочка:
+
+```text
+onChange
+→ setGoalText
+→ изменяется goalText
+→ render
+→ useEffect видит изменение [goalText]
+→ validation
+→ setGoalTextError
+→ дополнительный render
+→ ошибка появляется или исчезает
+```
+
+## 7. Real-time validation цвета
+
+```tsx
+useEffect(() => {
+  setBackgroundColorError(
+    backgroundColor.trim() === "" ? "Du skal vælge en farve." : "",
+  );
+}, [backgroundColor]);
+```
+
+Этот effect зависит только от `backgroundColor`.
+
+Текущий `input type="color"` обычно не позволяет пользователю создать пустое значение. Тем не менее проверка существует, потому что письменное задание требует проверять оба поля.
+
+Мы не добавляем error-state в dependencies того effect, который этот error-state изменяет:
+
+```tsx
+// Неправильно для нашей логики:
+useEffect(() => {
+  setGoalTextError(...);
+}, [goalText, goalTextError]);
+```
+
+Effect использует `goalText` для вычисления ошибки. Поэтому настоящая зависимость — только `goalText`.
+
+## 8. Когда запускается validation
+
+Effects с dependencies запускаются и после initial render.
+
+Поэтому начальный `goalText` равен пустой строке и ошибка текста появляется сразу:
+
+```text
+initial render
+→ goalText === ""
+→ effect
+→ goalTextError получает сообщение
+```
+
+После reset текст снова становится пустым, effect выполняет проверку, и ошибка снова появляется.
+
+Если преподаватель потребует показывать ошибки только после взаимодействия, понадобится отдельный `touched-state`. Сейчас он не добавлен.
+
+Вопрос преподавателю:
+
+```text
+Skal fejlbeskederne vises allerede ved den første rendering, eller først efter at brugeren har ændret feltet eller prøvet at sende formularen?
+```
+
+Перевод: сообщения об ошибках должны показываться при первом render или только после изменения поля либо попытки отправить форму?
+
+## 9. Conditional rendering ошибки
+
+```tsx
+{goalTextError && (
+  <p id="goalTextError" className="customGoalError">
+    {goalTextError}
+  </p>
+)}
+```
+
+```text
+goalTextError === ""
+→ пустая строка преобразуется в false
+→ JSX ошибки не отображается
+
+goalTextError содержит сообщение
+→ значение преобразуется в true
+→ JSX ошибки отображается
+```
+
+## 10. Accessibility ошибок
+
+```tsx
+aria-invalid={Boolean(goalTextError)}
+aria-describedby={goalTextError ? "goalTextError" : undefined}
+```
+
+- `aria-invalid` сообщает screen reader, что поле некорректно.
+- `aria-describedby` связывает input с сообщением по его `id`.
+- `aria-live="polite"` позволяет сообщить об изменившейся ошибке без резкого прерывания пользователя.
+- `Boolean(goalTextError)` преобразует пустую или непустую строку в `false` или `true`.
+
+Стандартные accessibility props проходят через существующий `Input`, потому что его тип основан на `ComponentPropsWithoutRef<"input">`.
+
+## 11. Submit и reset
+
+```tsx
+const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+};
+```
+
+`preventDefault()` отменяет стандартную отправку и перезагрузку страницы. Данные никуда не отправляются: в проекте нет API или backend.
+
+```tsx
+const handleReset = () => {
+  setGoalText(INITIAL_GOAL_TEXT);
+  setBackgroundColor(INITIAL_BACKGROUND_COLOR);
+};
+```
+
+Reset изменяет state через setters. Controlled inputs и preview получают новые значения автоматически. Effects также видят изменения зависимостей и повторяют validation.
+
+## 12. Важное замечание о современном React
+
+Новое правило ESLint `react-hooks/set-state-in-effect` предупреждает, что синхронный setter внутри effect создаёт дополнительный render. Для простой проверки данных в production-коде ошибку часто лучше вычислять прямо из существующего state без отдельного effect.
+
+В этом задании `useEffect` и отдельный error-state являются прямым учебным требованием преподавателя. Поэтому правило отключено только возле двух конкретных setters, а не глобально для проекта.
+
+```text
+Учебная цель
+→ увидеть dependency array
+→ увидеть запуск effect после render
+→ увидеть дополнительный render после setter ошибки
+```
+
+## 13. Частые ошибки
+
+### Hook внутри if
+
+```tsx
+if (goalText === "") {
+  useEffect(...); // нельзя
+}
+```
+
+Hooks вызываются только на верхнем уровне компонента.
+
+### Неправильная зависимость
+
+```tsx
+useEffect(() => {
+  // используется goalText
+}, [backgroundColor]);
+```
+
+Dependency array должен содержать reactive values, используемые effect.
+
+### Прямое изменение state
+
+```tsx
+goalTextError = "Ошибка"; // нельзя
+```
+
+State изменяется через setter.
+
+### Вызов handler во время render
+
+```tsx
+onChange={handleTextChange()} // неправильно
+onChange={handleTextChange}   // правильно
+```
+
+### Бесконечный цикл
+
+```text
+effect запускается после каждого render
+→ безусловно создаёт новое state
+→ новое state вызывает render
+→ effect снова запускается
+```
+
+Setter внутри effect не всегда создаёт цикл. Цикл появляется, когда effect снова запускается из-за собственного обновления и каждый раз создаёт новое состояние.
+
+## 14. Как объяснить преподавателю
+
+В `CustomGoalDesigner` значения полей хранятся в state и обновляются через `onChange`. Каждый `useEffect` получает функцию проверки и свой dependency array. Effect текста зависит от `goalText`, а effect цвета — от `backgroundColor`, поэтому каждая проверка запускается после первого render и после изменения соответствующего поля.
+
+Результат validation сохраняется в отдельных error-state. Conditional rendering показывает сообщение только тогда, когда error-state содержит текст. Поля связаны с сообщениями через `aria-invalid` и `aria-describedby`. Submit предотвращает перезагрузку страницы, а reset возвращает начальные значения и повторно запускает validation.

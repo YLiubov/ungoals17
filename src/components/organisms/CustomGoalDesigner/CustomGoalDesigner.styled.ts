@@ -32,11 +32,24 @@ export const CustomGoalDesignerStyled =
       gap: 18px;
     }
 
-    form > div:not(.customGoalActions) {
+    .customGoalFieldGroup {
+      display: grid;
+      gap: 4px;
+    }
+
+    .customGoalFieldGroup > div:first-child {
       display: grid;
       grid-template-columns: 96px minmax(0, 400px);
       align-items: center;
       gap: 8px;
+    }
+
+    .customGoalError {
+      min-height: 18px;
+      margin: 0 0 0 104px;
+      color: #c5192d;
+      font-size: 13px;
+      line-height: 1.4;
     }
 
     .customGoalColorControl {
@@ -104,8 +117,12 @@ export const CustomGoalDesignerStyled =
     }
 
     @media (max-width: 500px) {
-      form > div:not(.customGoalActions) {
+      .customGoalFieldGroup > div:first-child {
         grid-template-columns: 1fr;
+      }
+
+      .customGoalError {
+        margin-left: 0;
       }
     }
   `;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 
 import { Button } from "../../atoms/Button/Button";
@@ -16,6 +16,24 @@ export const CustomGoalDesigner = () => {
   const [backgroundColor, setBackgroundColor] = useState(
     INITIAL_BACKGROUND_COLOR,
   );
+  const [goalTextError, setGoalTextError] = useState("");
+  const [backgroundColorError, setBackgroundColorError] = useState("");
+
+  useEffect(() => {
+    // Учебное требование: сохраняем результат validation в error-state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGoalTextError(
+      goalText.trim() === "" ? "Du skal skrive dit eget verdensmål." : "",
+    );
+  }, [goalText]);
+
+  useEffect(() => {
+    // Учебное требование: сохраняем результат validation в error-state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBackgroundColorError(
+      backgroundColor.trim() === "" ? "Du skal vælge en farve." : "",
+    );
+  }, [backgroundColor]);
 
   const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
     setGoalText(event.target.value);
@@ -48,29 +66,59 @@ export const CustomGoalDesigner = () => {
 
       <div className="customGoalWorkspace">
         <form onSubmit={handleSubmit}>
-          <FormField
-            id="goalText"
-            name="goalText"
-            type="text"
-            label="Måltekst:"
-            placeholder="Indtast titel på mål"
-            value={goalText}
-            onChange={handleTextChange}
-          />
+          <div className="customGoalFieldGroup">
+            <FormField
+              id="goalText"
+              name="goalText"
+              type="text"
+              label="Måltekst:"
+              placeholder="Indtast titel på mål"
+              value={goalText}
+              onChange={handleTextChange}
+              aria-invalid={Boolean(goalTextError)}
+              aria-describedby={goalTextError ? "goalTextError" : undefined}
+            />
 
-          <div className="customGoalColorField">
-            <Label htmlFor="goalColor">Farvekode:</Label>
+            {goalTextError && (
+              <p
+                id="goalTextError"
+                className="customGoalError"
+                aria-live="polite"
+              >
+                {goalTextError}
+              </p>
+            )}
+          </div>
 
-            <div className="customGoalColorControl">
-              <span aria-hidden="true">{backgroundColor}</span>
-              <Input
-                id="goalColor"
-                name="goalColor"
-                type="color"
-                value={backgroundColor}
-                onChange={handleBackgroundColorChange}
-              />
+          <div className="customGoalFieldGroup">
+            <div className="customGoalColorField">
+              <Label htmlFor="goalColor">Farvekode:</Label>
+
+              <div className="customGoalColorControl">
+                <span aria-hidden="true">{backgroundColor}</span>
+                <Input
+                  id="goalColor"
+                  name="goalColor"
+                  type="color"
+                  value={backgroundColor}
+                  onChange={handleBackgroundColorChange}
+                  aria-invalid={Boolean(backgroundColorError)}
+                  aria-describedby={
+                    backgroundColorError ? "backgroundColorError" : undefined
+                  }
+                />
+              </div>
             </div>
+
+            {backgroundColorError && (
+              <p
+                id="backgroundColorError"
+                className="customGoalError"
+                aria-live="polite"
+              >
+                {backgroundColorError}
+              </p>
+            )}
           </div>
 
           <div className="customGoalActions">
